@@ -28,12 +28,11 @@ namespace GoCar.Application.Services
         // LOGIN
         // =====================================================
 
-        public async Task<LoginResponseDto?> LoginAsync(
-            LoginDto dto)
+        public async Task<LoginResponseDto?> LoginAsync(LoginDto dto)
         {
-            var email =
-                dto.Email.Trim()
-                    .ToLowerInvariant();
+            var email = dto.Email
+                .Trim()
+                .ToLowerInvariant();
 
             var usuario =
                 await _repository.ObterPorEmailAsync(email);
@@ -54,9 +53,10 @@ namespace GoCar.Application.Services
 
             // =================================================
             // MIGRAÇÃO AUTOMÁTICA DE SENHA ANTIGA
+            // =================================================
             //
-            // Se a senha ainda estiver salva em texto puro,
-            // converte para hash no primeiro login correto.
+            // Caso a senha ainda esteja armazenada em texto
+            // puro, converte para PBKDF2 após o primeiro login.
             // =================================================
 
             if (!EhSenhaComHash(usuario.SenhaHash))
@@ -70,8 +70,7 @@ namespace GoCar.Application.Services
                 await _repository.AtualizarAsync(usuario);
             }
 
-            var token =
-                GerarToken(usuario);
+            var token = GerarToken(usuario);
 
             return new LoginResponseDto
             {
@@ -94,12 +93,11 @@ namespace GoCar.Application.Services
             // NORMALIZAR DADOS
             // =================================================
 
-            var email =
-                dto.Email.Trim()
-                    .ToLowerInvariant();
+            var email = dto.Email
+                .Trim()
+                .ToLowerInvariant();
 
-            var cpf =
-                dto.CPF.Trim();
+            var cpf = dto.CPF.Trim();
 
             // =================================================
             // VERIFICAR E-MAIL
@@ -125,88 +123,81 @@ namespace GoCar.Application.Services
             // CRIAR USUÁRIO
             // =================================================
 
-            var usuario =
-                new Usuario
-                {
-                    Nome =
-                        dto.Nome.Trim(),
+            var usuario = new Usuario
+            {
+                Nome = dto.Nome.Trim(),
 
-                    Email =
-                        email,
+                Email = email,
 
-                    // Agora a senha nunca é salva em texto puro.
-                    SenhaHash =
-                        GerarHashSenha(dto.Senha),
+                SenhaHash =
+                    GerarHashSenha(dto.Senha),
 
-                    CPF =
-                        cpf,
+                CPF = cpf,
 
-                    Telefone =
-                        dto.Telefone.Trim(),
+                Telefone =
+                    dto.Telefone.Trim(),
 
-                    Perfil =
-                        PerfilUsuario.Cliente,
+                Perfil =
+                    PerfilUsuario.Cliente,
 
-                    IsAtivo =
-                        true,
+                IsAtivo = true,
 
-                    DataCriacao =
-                        DateTime.Now
-                };
+                DataCriacao =
+                    DateTime.Now
+            };
 
             // =================================================
             // PREPARAR CLIENTE
             // =================================================
 
-            var cliente =
-                new Cliente
-                {
-                    Nome =
-                        usuario.Nome,
+            var cliente = new Cliente
+            {
+                Nome =
+                    usuario.Nome,
 
-                    CPF =
-                        usuario.CPF,
+                CPF =
+                    usuario.CPF,
 
-                    DataNascimento =
-                        dto.DataNascimento,
+                DataNascimento =
+                    dto.DataNascimento,
 
-                    Telefone =
-                        usuario.Telefone,
+                Telefone =
+                    usuario.Telefone,
 
-                    CNH =
-                        dto.CNH.Trim(),
+                CNH =
+                    dto.CNH.Trim(),
 
-                    CategoriaCNH =
-                        dto.CategoriaCNH.Trim(),
+                CategoriaCNH =
+                    dto.CategoriaCNH.Trim(),
 
-                    DataValidadeCNH =
-                        dto.DataValidadeCNH,
+                DataValidadeCNH =
+                    dto.DataValidadeCNH,
 
-                    Endereco =
-                        dto.Endereco.Trim(),
+                Endereco =
+                    dto.Endereco.Trim(),
 
-                    Numero =
-                        dto.Numero.Trim(),
+                Numero =
+                    dto.Numero.Trim(),
 
-                    Bairro =
-                        dto.Bairro.Trim(),
+                Bairro =
+                    dto.Bairro.Trim(),
 
-                    Cidade =
-                        dto.Cidade.Trim(),
+                Cidade =
+                    dto.Cidade.Trim(),
 
-                    Estado =
-                        dto.Estado.Trim()
-                            .ToUpperInvariant(),
+                Estado =
+                    dto.Estado
+                        .Trim()
+                        .ToUpperInvariant(),
 
-                    CEP =
-                        dto.CEP.Trim(),
+                CEP =
+                    dto.CEP.Trim(),
 
-                    IsAtivo =
-                        true,
+                IsAtivo = true,
 
-                    DataCadastro =
-                        DateTime.Now
-                };
+                DataCadastro =
+                    DateTime.Now
+            };
 
             // =================================================
             // USUÁRIO + CLIENTE NA MESMA TRANSAÇÃO
@@ -218,8 +209,7 @@ namespace GoCar.Application.Services
                         usuario,
                         cliente);
 
-            usuario =
-                resultado.Usuario;
+            usuario = resultado.Usuario;
 
             // =================================================
             // LOGIN AUTOMÁTICO
@@ -242,8 +232,7 @@ namespace GoCar.Application.Services
         // GERAR HASH DA SENHA
         // =====================================================
 
-        private static string GerarHashSenha(
-            string senha)
+        private static string GerarHashSenha(string senha)
         {
             const int iteracoes = 100_000;
             const int tamanhoSalt = 16;
@@ -275,23 +264,23 @@ namespace GoCar.Application.Services
             string senhaInformada,
             string senhaArmazenada)
         {
-            if (string.IsNullOrWhiteSpace(
-                senhaArmazenada))
+            if (string.IsNullOrWhiteSpace(senhaArmazenada))
             {
                 return false;
             }
 
             // =================================================
             // USUÁRIO ANTIGO
+            // =================================================
             //
-            // Mantém compatibilidade temporária com as contas
-            // criadas antes da implementação do hash.
+            // Mantém compatibilidade temporária com usuários
+            // criados antes da implementação do hash.
             // =================================================
 
             if (!EhSenhaComHash(senhaArmazenada))
             {
                 return senhaArmazenada ==
-                    senhaInformada;
+                       senhaInformada;
             }
 
             try
@@ -336,8 +325,7 @@ namespace GoCar.Application.Services
         // IDENTIFICAR SENHA COM HASH
         // =====================================================
 
-        private static bool EhSenhaComHash(
-            string senha)
+        private static bool EhSenhaComHash(string senha)
         {
             return
                 !string.IsNullOrWhiteSpace(senha) &&
@@ -350,9 +338,12 @@ namespace GoCar.Application.Services
         // GERAR TOKEN JWT
         // =====================================================
 
-        private string GerarToken(
-            Usuario usuario)
+        private string GerarToken(Usuario usuario)
         {
+            // =================================================
+            // LER CONFIGURAÇÕES JWT
+            // =================================================
+
             var key =
                 _configuration["Jwt:Key"];
 
@@ -362,50 +353,99 @@ namespace GoCar.Application.Services
             var audience =
                 _configuration["Jwt:Audience"];
 
-            var expirationInMinutes =
-                int.Parse(
-                    _configuration[
-                        "Jwt:ExpirationInMinutes"]!);
+            var expirationString =
+                _configuration["Jwt:ExpirationInMinutes"];
 
-            var claims =
-                new List<Claim>
-                {
-                    new Claim(
-                        JwtRegisteredClaimNames.Sub,
-                        usuario.Id.ToString()),
+            // =================================================
+            // VALIDAR CONFIGURAÇÕES
+            // =================================================
 
-                    new Claim(
-                        JwtRegisteredClaimNames.Email,
-                        usuario.Email),
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new InvalidOperationException(
+                    "A configuração Jwt:Key não foi encontrada.");
+            }
 
-                    new Claim(
-                        ClaimTypes.Name,
-                        usuario.Nome),
+            if (string.IsNullOrWhiteSpace(issuer))
+            {
+                throw new InvalidOperationException(
+                    "A configuração Jwt:Issuer não foi encontrada.");
+            }
 
-                    new Claim(
-                        ClaimTypes.Role,
-                        usuario.Perfil.ToString())
-                };
+            if (string.IsNullOrWhiteSpace(audience))
+            {
+                throw new InvalidOperationException(
+                    "A configuração Jwt:Audience não foi encontrada.");
+            }
+
+            if (!int.TryParse(
+                    expirationString,
+                    out var expirationInMinutes))
+            {
+                throw new InvalidOperationException(
+                    "A configuração Jwt:ExpirationInMinutes é inválida.");
+            }
+
+            // =================================================
+            // CLAIMS DO USUÁRIO
+            // =================================================
+
+            var claims = new List<Claim>
+            {
+                new Claim(
+                    JwtRegisteredClaimNames.Sub,
+                    usuario.Id.ToString()),
+
+                new Claim(
+                    JwtRegisteredClaimNames.Email,
+                    usuario.Email),
+
+                new Claim(
+                    ClaimTypes.Name,
+                    usuario.Nome),
+
+                new Claim(
+                    ClaimTypes.Role,
+                    usuario.Perfil.ToString())
+            };
+
+            // =================================================
+            // CHAVE DE ASSINATURA
+            // =================================================
 
             var securityKey =
                 new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(key!));
+                    Encoding.UTF8.GetBytes(key));
+
+            // Define explicitamente um identificador para a chave.
+            // Isso permite que o mesmo KeyId seja utilizado
+            // durante a validação do JWT.
+            securityKey.KeyId = "GoCarJwtKey";
 
             var credentials =
                 new SigningCredentials(
                     securityKey,
                     SecurityAlgorithms.HmacSha256);
 
+            // =================================================
+            // CRIAR TOKEN
+            // =================================================
+
             var token =
                 new JwtSecurityToken(
                     issuer: issuer,
                     audience: audience,
                     claims: claims,
+                    notBefore: DateTime.UtcNow,
                     expires:
                         DateTime.UtcNow.AddMinutes(
                             expirationInMinutes),
                     signingCredentials:
                         credentials);
+
+            // =================================================
+            // RETORNAR JWT
+            // =================================================
 
             return new JwtSecurityTokenHandler()
                 .WriteToken(token);
