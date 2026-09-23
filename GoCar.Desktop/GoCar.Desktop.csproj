@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Folder Include="Forms\Locacoes\" />
+	  <Folder Include="Forms\Filiais\" />
+	  <Folder Include="Forms\Categorias\" />
+	  <Folder Include="Forms\Pagamentos\" />
+	  <Folder Include="Forms\Reservas\" />
+	  <Folder Include="Forms\Veiculos\" />
+	</ItemGroup>
+
+</Project>

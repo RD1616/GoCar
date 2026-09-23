@@ -1,0 +1,1252 @@
+﻿@model List<GoCar.Web.Models.PagamentoViewModel>
+
+@{
+    ViewData["Title"] = "Pagamentos";
+
+    var totalPagamentos =
+        Model?.Count ?? 0;
+
+    var pagamentosPagos =
+        Model?.Count(p =>
+            p.Status == 2 &&
+            p.IsAtivo) ?? 0;
+
+    var pagamentosPendentes =
+        Model?.Count(p =>
+            p.Status == 1 &&
+            p.IsAtivo) ?? 0;
+
+    var pagamentosEstornados =
+        Model?.Count(p =>
+            p.Status == 4) ?? 0;
+
+    var totalRecebido =
+        Model?
+            .Where(p =>
+                p.Status == 2 &&
+                p.IsAtivo)
+            .Sum(p => p.Valor)
+        ?? 0m;
+
+    string StatusPagamento(int status)
+    {
+        return status switch
+        {
+            1 => "Pendente",
+            2 => "Pago",
+            3 => "Cancelado",
+            4 => "Estornado",
+            _ => "Desconhecido"
+        };
+    }
+
+    string FormaPagamento(int forma)
+    {
+        return forma switch
+        {
+            1 => "Pix",
+            2 => "Cartão de Crédito",
+            3 => "Cartão de Débito",
+            4 => "Dinheiro",
+            _ => "Desconhecida"
+        };
+    }
+
+    string ClasseStatus(int status)
+    {
+        return status switch
+        {
+            1 => "payment-status-pending",
+            2 => "payment-status-paid",
+            3 => "payment-status-cancelled",
+            4 => "payment-status-refunded",
+            _ => "payment-status-default"
+        };
+    }
+
+    string NomeTipo(string? tipo)
+    {
+        if (string.Equals(
+            tipo,
+            "Entrada",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return "Entrada da Reserva";
+        }
+
+        if (string.Equals(
+            tipo,
+            "Locação",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return "Saldo da Locação";
+        }
+
+        return string.IsNullOrWhiteSpace(tipo)
+            ? "Não informado"
+            : tipo;
+    }
+}
+
+<style>
+
+    .payments-page {
+        max-width: 1600px;
+        margin: auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    .payments-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .payments-eyebrow {
+        margin-bottom: 4px;
+        color: #8d849a;
+        font-size: .90rem;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .payments-title {
+        margin: 0;
+        color: #fff;
+        font-size: 1.85rem;
+        font-weight: 800;
+    }
+
+    .payments-description {
+        margin: 6px 0 0;
+        color: #81778e;
+        font-size: .96rem;
+    }
+
+    .payments-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+    .payment-primary-btn,
+    .payment-secondary-btn {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: .90rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+    .payment-primary-btn {
+        border: 1px solid #8b3dff;
+        background: linear-gradient( 135deg, #7c2cff, #9b4dff );
+        color: #fff;
+        box-shadow: 0 8px 25px rgba(126,44,255,.18);
+    }
+
+        .payment-primary-btn:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+    .payment-secondary-btn {
+        border: 1px solid rgba(151,71,255,.24);
+        background: rgba(126,44,255,.06);
+        color: #bca9d4;
+    }
+
+        .payment-secondary-btn:hover {
+            color: #fff;
+            background: rgba(126,44,255,.12);
+            border-color: rgba(151,71,255,.45);
+        }
+
+    /* RESUMO */
+
+    .payments-summary {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 13px;
+        margin-bottom: 18px;
+    }
+
+    .payment-summary-card {
+        position: relative;
+        overflow: hidden;
+        padding: 16px 17px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 10px;
+        background: linear-gradient( 145deg, rgba(24,13,41,.96), rgba(14,8,25,.96) );
+    }
+
+        .payment-summary-card::after {
+            content: "";
+            position: absolute;
+            width: 75px;
+            height: 75px;
+            right: -35px;
+            top: -35px;
+            border-radius: 50%;
+            background: rgba(139,51,255,.07);
+        }
+
+    .payment-summary-label {
+        color: #81778d;
+        font-size: .86rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .payment-summary-value {
+        margin-top: 5px;
+        color: #fff;
+        font-size: 1.4rem;
+        font-weight: 800;
+    }
+
+    .payment-summary-money {
+        color: #c084fc;
+    }
+
+    /* FILTROS */
+
+    .payments-toolbar {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.5fr auto;
+        align-items: end;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 10px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.97), rgba(13,7,24,.97) );
+    }
+
+    .payment-filter-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: #776d82;
+        font-size: .82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    .payment-filter-control {
+        width: 100%;
+        height: 39px;
+        padding: 0 12px;
+        border: 1px solid rgba(151,71,255,.18);
+        border-radius: 8px;
+        outline: none;
+        background: #130b20;
+        color: #b9afc5;
+        font-size: .90rem;
+    }
+
+    input.payment-filter-control {
+        background: rgba(255,255,255,.025);
+        color: #fff;
+    }
+
+    .payment-filter-control::placeholder {
+        color: #665d72;
+    }
+
+    .payment-filter-control:focus {
+        border-color: rgba(151,71,255,.55);
+    }
+
+    .payments-result-count {
+        height: 39px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        color: #71677d;
+        font-size: .86rem;
+    }
+
+        .payments-result-count strong {
+            margin-right: 4px;
+            color: #c2b7cf;
+        }
+
+    /* GRID */
+
+    .payments-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    /* CARD */
+
+    .payment-card {
+        overflow: hidden;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+        transition: .18s ease;
+    }
+
+        .payment-card:hover {
+            border-color: rgba(151,71,255,.32);
+            transform: translateY(-1px);
+        }
+
+    .payment-card-header {
+        min-height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+    .payment-number small {
+        display: block;
+        margin-bottom: 2px;
+        color: #756b80;
+        font-size: .82rem;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .payment-number strong {
+        display: block;
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    .payment-link {
+        margin-top: 3px;
+        color: #776d82;
+        font-size: .82rem;
+    }
+
+    /* STATUS */
+
+    .payment-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+        .payment-status::before {
+            content: "";
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+    .payment-status-pending {
+        color: #fbbf24;
+        background: rgba(245,158,11,.13);
+    }
+
+    .payment-status-paid {
+        color: #3ce78c;
+        background: rgba(26,192,103,.12);
+    }
+
+    .payment-status-cancelled {
+        color: #ff718d;
+        background: rgba(244,63,94,.13);
+    }
+
+    .payment-status-refunded {
+        color: #a8a1b0;
+        background: rgba(148,163,184,.11);
+    }
+
+    .payment-status-default {
+        color: #94a3b8;
+        background: rgba(148,163,184,.11);
+    }
+
+    /* BODY */
+
+    .payment-body {
+        padding: 16px;
+    }
+
+    .payment-type-box {
+        margin-bottom: 15px;
+        padding: 12px;
+        border: 1px solid rgba(151,71,255,.11);
+        border-radius: 8px;
+        background: rgba(126,44,255,.035);
+    }
+
+    .payment-type-label {
+        color: #706677;
+        font-size: .82rem;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+    }
+
+    .payment-type-value {
+        margin-top: 3px;
+        color: #d9d0e4;
+        font-size: .90rem;
+        font-weight: 700;
+    }
+
+    .payment-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .payment-info-label {
+        margin-bottom: 3px;
+        color: #706677;
+        font-size: .82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+    }
+
+    .payment-info-value {
+        color: #d4cddb;
+        font-size: .88rem;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .payment-info-muted {
+        color: #71677d;
+        font-size: .84rem;
+    }
+
+    /* VALOR */
+
+    .payment-value-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        margin-top: 16px;
+        padding: 12px;
+        border: 1px solid rgba(151,71,255,.11);
+        border-radius: 8px;
+        background: rgba(255,255,255,.015);
+    }
+
+    .payment-value-label {
+        color: #706677;
+        font-size: .82rem;
+        text-transform: uppercase;
+    }
+
+    .payment-value {
+        margin-top: 2px;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .payment-active {
+        color: #3ce78c;
+        font-size: .84rem;
+        font-weight: 700;
+    }
+
+    .payment-inactive {
+        color: #ff718d;
+        font-size: .84rem;
+        font-weight: 700;
+    }
+
+    /* FOOTER */
+
+    .payment-footer {
+        padding: 12px 16px;
+        border-top: 1px solid rgba(255,255,255,.045);
+        background: rgba(0,0,0,.07);
+    }
+
+    .payment-view-btn {
+        width: 100%;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(151,71,255,.22);
+        border-radius: 7px;
+        background: rgba(126,44,255,.055);
+        color: #c7b6dc;
+        text-decoration: none;
+        font-size: .86rem;
+        font-weight: 700;
+        transition: .15s ease;
+    }
+
+        .payment-view-btn:hover {
+            color: #fff;
+            background: rgba(126,44,255,.13);
+            border-color: rgba(151,71,255,.45);
+        }
+
+    /* SEM RESULTADO */
+
+    .payments-empty {
+        padding: 55px 25px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.97), rgba(13,7,24,.97) );
+        text-align: center;
+    }
+
+    .payments-empty-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 13px;
+        border-radius: 50%;
+        color: #a855f7;
+        background: rgba(139,51,255,.12);
+        font-size: 1.2rem;
+    }
+
+    .payments-empty h3 {
+        margin-bottom: 7px;
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    .payments-empty p {
+        margin-bottom: 16px;
+        color: #746b7e;
+        font-size: .88rem;
+    }
+
+    .payment-hidden {
+        display: none !important;
+    }
+
+    @@media (max-width: 1250px) {
+
+        .payments-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .payments-summary {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 900px) {
+
+        .payments-toolbar {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 700px) {
+
+        .payments-page {
+            padding: 20px 15px;
+        }
+
+        .payments-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .payments-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .payments-toolbar {
+            grid-template-columns: 1fr;
+        }
+
+        .payments-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+</style>
+
+
+<div class="payments-page">
+
+    <div class="payments-header">
+
+        <div>
+
+            <div class="payments-eyebrow">
+                Financeiro
+            </div>
+
+            <h1 class="payments-title">
+                Pagamentos
+            </h1>
+
+            <p class="payments-description">
+                Gerencie entradas, saldos, multas e adicionais.
+            </p>
+
+        </div>
+
+
+        <div class="payments-header-actions">
+
+            <a asp-controller="Pagamentos"
+               asp-action="Criar"
+               class="payment-primary-btn">
+
+                + Novo Pagamento
+
+            </a>
+
+            <a asp-controller="Dashboard"
+               asp-action="Index"
+               class="payment-secondary-btn">
+
+                ← Dashboard
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    @if (TempData["Sucesso"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Sucesso"]
+        </div>
+    }
+
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Erro"]
+        </div>
+    }
+
+    @if (ViewBag.MensagemErro != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.MensagemErro
+        </div>
+    }
+
+
+    @if (Model != null && Model.Count > 0)
+    {
+        <div class="payments-summary">
+
+            <div class="payment-summary-card">
+
+                <div class="payment-summary-label">
+                    Total
+                </div>
+
+                <div class="payment-summary-value">
+                    @totalPagamentos
+                </div>
+
+            </div>
+
+
+            <div class="payment-summary-card">
+
+                <div class="payment-summary-label">
+                    Pagos
+                </div>
+
+                <div class="payment-summary-value">
+                    @pagamentosPagos
+                </div>
+
+            </div>
+
+
+            <div class="payment-summary-card">
+
+                <div class="payment-summary-label">
+                    Pendentes
+                </div>
+
+                <div class="payment-summary-value">
+                    @pagamentosPendentes
+                </div>
+
+            </div>
+
+
+            <div class="payment-summary-card">
+
+                <div class="payment-summary-label">
+                    Estornados
+                </div>
+
+                <div class="payment-summary-value">
+                    @pagamentosEstornados
+                </div>
+
+            </div>
+
+
+            <div class="payment-summary-card">
+
+                <div class="payment-summary-label">
+                    Total recebido
+                </div>
+
+                <div class="
+                    payment-summary-value
+                    payment-summary-money">
+
+                    @(totalRecebido.ToString("C"))
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="payments-toolbar">
+
+            <div class="payment-filter-group">
+
+                <label for="filtroTipo">
+                    Tipo
+                </label>
+
+                <select id="filtroTipo"
+                        class="payment-filter-control">
+
+                    <option value="">
+                        Todos os tipos
+                    </option>
+
+                    <option value="entrada">
+                        Entrada
+                    </option>
+
+                    <option value="locacao">
+                        Locação
+                    </option>
+
+                    <option value="multa">
+                        Multa
+                    </option>
+
+                    <option value="adicional">
+                        Adicional
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="payment-filter-group">
+
+                <label for="filtroStatus">
+                    Status
+                </label>
+
+                <select id="filtroStatus"
+                        class="payment-filter-control">
+
+                    <option value="">
+                        Todos os status
+                    </option>
+
+                    <option value="1">
+                        Pendente
+                    </option>
+
+                    <option value="2">
+                        Pago
+                    </option>
+
+                    <option value="3">
+                        Cancelado
+                    </option>
+
+                    <option value="4">
+                        Estornado
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="payment-filter-group">
+
+                <label for="filtroBusca">
+                    Buscar
+                </label>
+
+                <input id="filtroBusca"
+                       type="text"
+                       class="payment-filter-control"
+                       placeholder="Pagamento, reserva ou locação..." />
+
+            </div>
+
+
+            <div class="payments-result-count">
+
+                <strong id="paymentCount">
+                    @Model.Count
+                </strong>
+
+                pagamentos
+
+            </div>
+
+        </div>
+
+
+        <div id="listaPagamentos"
+             class="payments-grid">
+
+            @foreach (var pagamento in Model)
+            {
+                var tipoFiltro =
+                    (pagamento.Tipo ?? string.Empty)
+                        .Trim()
+                        .ToLowerInvariant();
+
+                var textoBusca =
+                    ($"pagamento {pagamento.Id} " +
+                     $"reserva {pagamento.ReservaId} " +
+                     $"locação {pagamento.LocacaoId} " +
+                     $"{pagamento.Tipo}")
+                        .ToLowerInvariant();
+
+
+                <article class="payment-card pagamento-item"
+                         data-tipo="@tipoFiltro"
+                         data-status="@pagamento.Status"
+                         data-busca="@textoBusca">
+
+
+                    <div class="payment-card-header">
+
+                        <div class="payment-number">
+
+                            <small>
+                                Pagamento
+                            </small>
+
+                            <strong>
+                                #@pagamento.Id
+                            </strong>
+
+
+                            @if (pagamento.ReservaId.HasValue)
+                            {
+                                <div class="payment-link">
+                                    Reserva #@pagamento.ReservaId.Value
+                                </div>
+                            }
+                            else if (pagamento.LocacaoId.HasValue)
+                            {
+                                <div class="payment-link">
+                                    Locação #@pagamento.LocacaoId.Value
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="payment-link">
+                                    Sem vínculo
+                                </div>
+                            }
+
+                        </div>
+
+
+                        <span class="
+                            payment-status
+                            @ClasseStatus(pagamento.Status)">
+
+                            @StatusPagamento(pagamento.Status)
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="payment-body">
+
+                        <div class="payment-type-box">
+
+                            <div class="payment-type-label">
+                                Tipo
+                            </div>
+
+                            <div class="payment-type-value">
+                                @NomeTipo(pagamento.Tipo)
+                            </div>
+
+                        </div>
+
+
+                        <div class="payment-info-grid">
+
+                            <div>
+
+                                <div class="payment-info-label">
+                                    Forma
+                                </div>
+
+                                <div class="payment-info-value">
+                                    @FormaPagamento(pagamento.FormaPagamento)
+                                </div>
+
+                            </div>
+
+
+                            <div>
+
+                                <div class="payment-info-label">
+                                    Status
+                                </div>
+
+                                <div class="payment-info-value">
+                                    @StatusPagamento(pagamento.Status)
+                                </div>
+
+                            </div>
+
+
+                            <div>
+
+                                <div class="payment-info-label">
+                                    Data do pagamento
+                                </div>
+
+                                <div class="payment-info-value">
+
+                                    @if (pagamento.DataPagamento.HasValue)
+                                    {
+                                        @(pagamento.DataPagamento.Value.ToString("dd/MM/yyyy HH:mm"))
+                                    }
+                                    else
+                                    {
+                                        <span class="payment-info-muted">
+                                            Ainda não pago
+                                        </span>
+                                    }
+
+                                </div>
+
+                            </div>
+
+
+                            <div>
+
+                                <div class="payment-info-label">
+                                    Criado em
+                                </div>
+
+                                <div class="payment-info-value">
+                                    @(pagamento.DataCriacao.ToString("dd/MM/yyyy HH:mm"))
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="payment-value-box">
+
+                            <div>
+
+                                <div class="payment-value-label">
+                                    Valor
+                                </div>
+
+                                <div class="payment-value">
+                                    @(pagamento.Valor.ToString("C"))
+                                </div>
+
+                            </div>
+
+
+                            <div>
+
+                                @if (pagamento.IsAtivo)
+                                {
+                                    <div class="payment-active">
+                                        ● Ativo
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="payment-inactive">
+                                        ● Inativo
+                                    </div>
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="payment-footer">
+
+                        <a asp-controller="Pagamentos"
+                           asp-action="Detalhes"
+                           asp-route-id="@pagamento.Id"
+                           class="payment-view-btn">
+
+                            Visualizar pagamento
+
+                        </a>
+
+                    </div>
+
+                </article>
+            }
+
+        </div>
+
+
+        <div id="nenhumResultado"
+             class="payments-empty d-none"
+             style="margin-top: 16px;">
+
+            <div class="payments-empty-icon">
+                $
+            </div>
+
+            <h3>
+                Nenhum pagamento encontrado
+            </h3>
+
+            <p>
+                Nenhum pagamento corresponde aos filtros selecionados.
+            </p>
+
+        </div>
+    }
+    else
+    {
+        <div class="payments-empty">
+
+            <div class="payments-empty-icon">
+                $
+            </div>
+
+            <h3>
+                Nenhum pagamento encontrado
+            </h3>
+
+            <p>
+                Ainda não existem pagamentos cadastrados.
+            </p>
+
+            <a asp-controller="Pagamentos"
+               asp-action="Criar"
+               class="payment-primary-btn">
+
+                + Criar primeiro pagamento
+
+            </a>
+
+        </div>
+    }
+
+</div>
+
+
+@section Scripts
+{
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function() {
+
+                const filtroTipo =
+                    document.getElementById(
+                        "filtroTipo"
+                    );
+
+                const filtroStatus =
+                    document.getElementById(
+                        "filtroStatus"
+                    );
+
+                const filtroBusca =
+                    document.getElementById(
+                        "filtroBusca"
+                    );
+
+                const itens =
+                    document.querySelectorAll(
+                        ".pagamento-item"
+                    );
+
+                const nenhumResultado =
+                    document.getElementById(
+                        "nenhumResultado"
+                    );
+
+                const paymentCount =
+                    document.getElementById(
+                        "paymentCount"
+                    );
+
+
+                if (!filtroTipo ||
+                    !filtroStatus ||
+                    !filtroBusca) {
+                    return;
+                }
+
+
+                function normalizarTexto(texto) {
+
+                    return (texto || "")
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(
+                            /[\u0300-\u036f]/g,
+                            ""
+                        );
+                }
+
+
+                function filtrarPagamentos() {
+
+                    const tipoSelecionado =
+                        normalizarTexto(
+                            filtroTipo.value
+                        );
+
+                    const statusSelecionado =
+                        filtroStatus.value;
+
+                    const busca =
+                        normalizarTexto(
+                            filtroBusca.value.trim()
+                        );
+
+                    let quantidadeVisivel = 0;
+
+
+                    itens.forEach(
+                        function(item) {
+
+                            const tipo =
+                                normalizarTexto(
+                                    item.dataset.tipo
+                                );
+
+                            const status =
+                                item.dataset.status || "";
+
+                            const texto =
+                                normalizarTexto(
+                                    item.dataset.busca
+                                );
+
+
+                            const correspondeTipo =
+                                !tipoSelecionado ||
+                                tipo === tipoSelecionado;
+
+
+                            const correspondeStatus =
+                                !statusSelecionado ||
+                                status === statusSelecionado;
+
+
+                            const correspondeBusca =
+                                !busca ||
+                                texto.includes(busca);
+
+
+                            const mostrar =
+                                correspondeTipo &&
+                                correspondeStatus &&
+                                correspondeBusca;
+
+
+                            item.classList.toggle(
+                                "payment-hidden",
+                                !mostrar
+                            );
+
+
+                            if (mostrar) {
+                                quantidadeVisivel++;
+                            }
+
+                        }
+                    );
+
+
+                    if (paymentCount) {
+                        paymentCount.textContent =
+                            quantidadeVisivel;
+                    }
+
+
+                    if (nenhumResultado) {
+
+                        nenhumResultado
+                            .classList.toggle(
+                                "d-none",
+                                quantidadeVisivel > 0
+                            );
+                    }
+
+                }
+
+
+                filtroTipo.addEventListener(
+                    "change",
+                    filtrarPagamentos
+                );
+
+                filtroStatus.addEventListener(
+                    "change",
+                    filtrarPagamentos
+                );
+
+                filtroBusca.addEventListener(
+                    "input",
+                    filtrarPagamentos
+                );
+
+            }
+        );
+
+    </script>
+}

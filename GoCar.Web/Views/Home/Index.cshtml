@@ -1,0 +1,810 @@
+﻿@model GoCar.Web.Models.HomeViewModel
+@using GoCar.Web.Controllers
+
+@{
+    ViewData["Title"] = "Início";
+
+    var gruposVeiculos =
+        ViewBag.GruposVeiculos
+            as List<HomeController.HomeVeiculoGrupoViewModel>
+        ?? new List<HomeController.HomeVeiculoGrupoViewModel>();
+
+    var categorias =
+        gruposVeiculos
+            .GroupBy(v => new
+            {
+                v.CategoriaId,
+                v.CategoriaNome
+            })
+            .OrderBy(g => g.Key.CategoriaNome)
+            .ToList();
+
+    int? filialSelecionadaId =
+        ViewBag.FilialSelecionadaId as int?;
+
+    DateTime? dataRetirada =
+        ViewBag.DataRetirada as DateTime?;
+
+    DateTime? dataDevolucao =
+        ViewBag.DataDevolucao as DateTime?;
+
+    bool buscaRealizada =
+        ViewBag.BuscaRealizada is bool br &&
+        br;
+
+    bool buscaValida =
+        ViewBag.BuscaValida is bool bv &&
+        bv;
+
+    string? erroBusca =
+        ViewBag.ErroBusca as string;
+}
+
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+
+            <div class="col-lg-6">
+
+                <span class="hero-badge">
+                    ALUGUEL DE CARROS
+                </span>
+
+                <h1 class="hero-title">
+                    Seu próximo destino começa com a
+                    <span>GoCar</span>
+                </h1>
+
+                <p class="hero-text">
+                    Encontre o carro ideal para sua viagem com praticidade,
+                    segurança e liberdade para ir mais longe.
+                </p>
+
+                <div class="hero-actions">
+
+                    <a href="#reserva"
+                       class="gocar-btn-primary">
+                        Alugar agora
+                    </a>
+
+                    <a href="#veiculos"
+                       class="gocar-btn-outline">
+                        Ver veículos
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-6 mt-5 mt-lg-0">
+
+                <div class="hero-visual">
+
+                    <div class="hero-car-placeholder">
+
+                        <span>
+                            GoCar
+                        </span>
+
+                        <p>
+                            Imagem principal do veículo
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- BUSCA -->
+<!-- ========================================== -->
+
+<section id="reserva"
+         class="booking-section">
+
+    <div class="container">
+
+        <div class="booking-card">
+
+            @if (!string.IsNullOrWhiteSpace(
+                erroBusca))
+            {
+                <div class="alert alert-danger mb-4">
+                    @erroBusca
+                </div>
+            }
+
+            <form asp-controller="Home"
+                  asp-action="Index"
+                  method="get">
+
+                <div class="row g-3">
+
+                    <!-- FILIAL -->
+
+                    <div class="col-lg-3 col-md-6">
+
+                        <label for="filialId"
+                               class="form-label">
+                            Local de retirada
+                        </label>
+
+                        <select id="filialId"
+                                name="filialId"
+                                class="form-select"
+                                required>
+
+                            <option value="">
+                                Selecione uma filial
+                            </option>
+
+                            @foreach (var filial in Model.Filiais)
+                            {
+                                if (filialSelecionadaId ==
+                                    filial.Id)
+                                {
+                                    <option value="@filial.Id"
+                                            selected>
+                                        @filial.Nome -
+                                        @filial.Cidade/@filial.Estado
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@filial.Id">
+                                        @filial.Nome -
+                                        @filial.Cidade/@filial.Estado
+                                    </option>
+                                }
+                            }
+
+                        </select>
+
+                    </div>
+
+                    <!-- RETIRADA -->
+
+                    <div class="col-lg-3 col-md-6">
+
+                        <label for="dataRetirada"
+                               class="form-label">
+                            Data de retirada
+                        </label>
+
+                        <input id="dataRetirada"
+                               name="dataRetirada"
+                               type="date"
+                               class="form-control"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                               value="@(dataRetirada?.ToString("yyyy-MM-dd"))"
+                               required />
+
+                    </div>
+
+                    <!-- DEVOLUÇÃO -->
+
+                    <div class="col-lg-3 col-md-6">
+
+                        <label for="dataDevolucao"
+                               class="form-label">
+                            Data de devolução
+                        </label>
+
+                        <input id="dataDevolucao"
+                               name="dataDevolucao"
+                               type="date"
+                               class="form-control"
+                               min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")"
+                               value="@(dataDevolucao?.ToString("yyyy-MM-dd"))"
+                               required />
+
+                    </div>
+
+                    <!-- BUSCAR -->
+
+                    <div class="col-lg-3 col-md-6 d-flex align-items-end">
+
+                        <button type="submit"
+                                class="gocar-btn-primary w-100">
+                            Buscar carros
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ========================================== -->
+<!-- VEÍCULOS -->
+<!-- ========================================== -->
+
+<section id="veiculos"
+         class="gocar-section">
+
+    <div class="container">
+
+        <div class="text-center mb-5">
+
+            <span class="section-badge">
+                NOSSA FROTA
+            </span>
+
+            <h2 class="gocar-section-title">
+                Escolha o carro ideal para você
+            </h2>
+
+            @if (buscaRealizada &&
+                 buscaValida)
+            {
+                <p class="gocar-section-subtitle">
+                    Veículos disponíveis na filial
+                    selecionada.
+                </p>
+            }
+            else
+            {
+                <p class="gocar-section-subtitle">
+                    Escolha uma categoria e encontre
+                    o modelo ideal para sua próxima viagem.
+                </p>
+            }
+
+        </div>
+
+        @if (buscaRealizada &&
+             buscaValida)
+        {
+            <div class="alert alert-success mb-5">
+
+                <strong>
+                    Busca realizada:
+                </strong>
+
+                @if (filialSelecionadaId.HasValue)
+                {
+                    var filialSelecionada =
+                        Model.Filiais.FirstOrDefault(
+                            f =>
+                                f.Id ==
+                                filialSelecionadaId.Value);
+
+                    if (filialSelecionada != null)
+                    {
+                        <span>
+                            @filialSelecionada.Nome
+                        </span>
+                    }
+                }
+
+                @if (dataRetirada.HasValue &&
+                     dataDevolucao.HasValue)
+                {
+                    <span>
+                        —
+                        @dataRetirada.Value.ToString("dd/MM/yyyy")
+                        até
+                        @dataDevolucao.Value.ToString("dd/MM/yyyy")
+                    </span>
+                }
+
+            </div>
+        }
+
+        @if (gruposVeiculos.Any())
+        {
+            @foreach (var categoria in categorias)
+            {
+                <div class="vehicle-category-section mb-5">
+
+                    <div class="d-flex justify-content-between
+                        align-items-end flex-wrap gap-3 mb-4">
+
+                        <div>
+
+                            <span class="section-badge">
+                                GRUPO
+                            </span>
+
+                            <h2 class="gocar-section-title mb-1">
+                                @categoria.Key.CategoriaNome
+                            </h2>
+
+                            <p class="gocar-section-subtitle mb-0">
+
+                                @categoria.Count()
+                                modelos disponíveis
+
+                            </p>
+
+                        </div>
+
+                        <div class="category-availability">
+
+                            <span class="availability-dot">
+                            </span>
+
+                            @categoria.Sum(v =>
+                                v.QuantidadeDisponivel)
+
+                            veículos disponíveis
+
+                        </div>
+
+                    </div>
+
+                    <div class="row g-4">
+
+                        @foreach (var veiculo in categoria)
+                        {
+                            <div class="col-lg-4 col-md-6">
+
+                                <div class="gocar-card vehicle-card h-100">
+
+                                    <div class="vehicle-image">
+
+                                        <span>
+                                            @veiculo.Marca
+                                        </span>
+
+                                    </div>
+
+                                    <div class="vehicle-info">
+
+                                        <div class="d-flex
+                                            justify-content-between
+                                            align-items-center
+                                            gap-2 mb-2">
+
+                                            <span class="vehicle-category">
+                                                @veiculo.CategoriaNome
+                                            </span>
+
+                                            @if (veiculo.QuantidadeDisponivel > 3)
+                                            {
+                                                <span class="vehicle-stock
+                                                    vehicle-stock-ok">
+
+                                                    @veiculo.QuantidadeDisponivel
+                                                    disponíveis
+
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="vehicle-stock
+                                                    vehicle-stock-low">
+
+                                                    Últimas
+                                                    @veiculo.QuantidadeDisponivel
+
+                                                </span>
+                                            }
+
+                                        </div>
+
+                                        <h3>
+                                            @veiculo.Marca
+                                            @veiculo.Modelo
+                                        </h3>
+
+                                        <div class="vehicle-details">
+
+                                            <span>
+                                                @if (veiculo.Cambio == 1)
+                                                {
+                                                    <text>Manual</text>
+                                                }
+                                                else if (veiculo.Cambio == 2)
+                                                {
+                                                    <text>Automático</text>
+                                                }
+                                                else if (veiculo.Cambio == 3)
+                                                {
+                                                    <text>Automatizado</text>
+                                                }
+                                                else if (veiculo.Cambio == 4)
+                                                {
+                                                    <text>CVT</text>
+                                                }
+                                                else
+                                                {
+                                                    <text>
+                                                        Câmbio @veiculo.Cambio
+                                                    </text>
+                                                }
+                                            </span>
+
+                                            <span>
+                                                @if (veiculo.Combustivel == 1)
+                                                {
+                                                    <text>Gasolina</text>
+                                                }
+                                                else if (veiculo.Combustivel == 2)
+                                                {
+                                                    <text>Etanol</text>
+                                                }
+                                                else if (veiculo.Combustivel == 3)
+                                                {
+                                                    <text>Flex</text>
+                                                }
+                                                else if (veiculo.Combustivel == 4)
+                                                {
+                                                    <text>Diesel</text>
+                                                }
+                                                else if (veiculo.Combustivel == 5)
+                                                {
+                                                    <text>Elétrico</text>
+                                                }
+                                                else if (veiculo.Combustivel == 6)
+                                                {
+                                                    <text>Híbrido</text>
+                                                }
+                                                else
+                                                {
+                                                    <text>
+                                                        Combustível
+                                                        @veiculo.Combustivel
+                                                    </text>
+                                                }
+                                            </span>
+
+                                            <span>
+                                                @veiculo.Cor
+                                            </span>
+
+                                        </div>
+
+                                        <div class="vehicle-year mt-3">
+
+                                            <small>
+                                                Ano
+                                            </small>
+
+                                            <span>
+                                                @veiculo.AnoFabricacao/@veiculo.AnoModelo
+                                            </span>
+
+                                        </div>
+
+                                        <div class="vehicle-footer">
+
+                                            <div>
+
+                                                <small>
+                                                    A partir de
+                                                </small>
+
+                                                <strong>
+                                                    @veiculo.ValorDiaria.ToString("C")
+                                                </strong>
+
+                                                <span>
+                                                    /dia
+                                                </span>
+
+                                            </div>
+
+                                            @if (buscaRealizada &&
+                                                 buscaValida &&
+                                                 filialSelecionadaId.HasValue &&
+                                                 dataRetirada.HasValue &&
+                                                 dataDevolucao.HasValue)
+                                            {
+                                                <a asp-controller="Reservas"
+                                                   asp-action="Criar"
+                                                   asp-route-veiculoId="@veiculo.VeiculoId"
+                                                   asp-route-filialId="@filialSelecionadaId.Value"
+                                                   asp-route-dataRetirada="@dataRetirada.Value.ToString("yyyy-MM-dd")"
+                                                   asp-route-dataDevolucao="@dataDevolucao.Value.ToString("yyyy-MM-dd")"
+                                                   class="gocar-btn-outline">
+
+                                                    Reservar
+
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a asp-controller="Reservas"
+                                                   asp-action="Criar"
+                                                   asp-route-veiculoId="@veiculo.VeiculoId"
+                                                   class="gocar-btn-outline">
+
+                                                    Reservar
+
+                                                </a>
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center">
+
+                @if (buscaRealizada &&
+                     buscaValida)
+                {
+                    <p class="gocar-section-subtitle">
+                        Nenhum veículo disponível para
+                        a filial selecionada.
+                    </p>
+                }
+                else
+                {
+                    <p class="gocar-section-subtitle">
+                        Nenhum veículo disponível
+                        no momento.
+                    </p>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</section>
+
+<!-- ========================================== -->
+<!-- COMO FUNCIONA -->
+<!-- ========================================== -->
+
+<section id="como-funciona"
+         class="how-section gocar-section">
+
+    <div class="container">
+
+        <div class="text-center mb-5">
+
+            <span class="section-badge">
+                SIMPLES E RÁPIDO
+            </span>
+
+            <h2 class="gocar-section-title">
+                Como funciona
+            </h2>
+
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+
+                <div class="step-card">
+
+                    <div class="step-number">
+                        01
+                    </div>
+
+                    <h3>
+                        Escolha seu carro
+                    </h3>
+
+                    <p>
+                        Selecione o modelo que mais
+                        combina com sua viagem.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="step-card">
+
+                    <div class="step-number">
+                        02
+                    </div>
+
+                    <h3>
+                        Faça sua reserva
+                    </h3>
+
+                    <p>
+                        Escolha as datas, filial
+                        e confirme sua reserva.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="step-card">
+
+                    <div class="step-number">
+                        03
+                    </div>
+
+                    <h3>
+                        Retire e viaje
+                    </h3>
+
+                    <p>
+                        Retire seu veículo e aproveite
+                        seu próximo destino.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ========================================== -->
+<!-- SOBRE -->
+<!-- ========================================== -->
+
+<section id="sobre"
+         class="about-section gocar-section">
+
+    <div class="container">
+
+        <div class="row align-items-center">
+
+            <div class="col-lg-6">
+
+                <span class="section-badge">
+                    SOBRE A GOCAR
+                </span>
+
+                <h2 class="gocar-section-title">
+                    Mobilidade do seu jeito
+                </h2>
+
+                <p class="about-text">
+                    A GoCar nasceu para tornar o aluguel
+                    de veículos mais simples, moderno e
+                    acessível. Nosso objetivo é oferecer
+                    uma experiência rápida do início ao fim.
+                </p>
+
+                <a href="#veiculos"
+                   class="gocar-btn-primary">
+                    Fazer uma reserva
+                </a>
+
+            </div>
+
+            <div class="col-lg-6 mt-5 mt-lg-0">
+
+                <div class="about-box">
+
+                    <div>
+                        <strong>100%</strong>
+                        <span>Digital</span>
+                    </div>
+
+                    <div>
+                        <strong>24h</strong>
+                        <span>Praticidade</span>
+                    </div>
+
+                    <div>
+                        <strong>+Conforto</strong>
+                        <span>Na sua viagem</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<style>
+
+    .vehicle-category-section {
+        padding-bottom: 25px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+        .vehicle-category-section:last-child {
+            border-bottom: none;
+        }
+
+    .category-availability {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        font-size: 13px;
+    }
+
+    .availability-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 10px rgba(34, 197, 94, .65);
+    }
+
+    .vehicle-stock {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .vehicle-stock-ok {
+        color: #86efac;
+        background: rgba(34, 197, 94, .10);
+        border: 1px solid rgba(34, 197, 94, .25);
+    }
+
+    .vehicle-stock-low {
+        color: #fde68a;
+        background: rgba(245, 158, 11, .10);
+        border: 1px solid rgba(245, 158, 11, .25);
+    }
+
+    .vehicle-year {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+        .vehicle-year small {
+            opacity: .65;
+        }
+
+</style>
+
+@if (buscaRealizada && buscaValida)
+{
+    <script>
+        document.addEventListener(
+            "DOMContentLoaded",
+            function() {
+
+                const secaoVeiculos =
+                    document.getElementById(
+                        "veiculos");
+
+                if (secaoVeiculos) {
+
+                    secaoVeiculos.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+
+                }
+            });
+    </script>
+}

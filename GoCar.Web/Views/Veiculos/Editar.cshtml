@@ -1,0 +1,1045 @@
+﻿@model GoCar.Web.Models.VeiculoViewModel
+@using GoCar.Web.Helpers
+
+@{
+    ViewData["Title"] = "Editar Veículo";
+
+    var categorias =
+        ViewBag.Categorias as List<GoCar.Web.Models.CategoriaViewModel>
+        ?? new List<GoCar.Web.Models.CategoriaViewModel>();
+
+    var filiais =
+        ViewBag.Filiais as List<GoCar.Web.Models.FilialViewModel>
+        ?? new List<GoCar.Web.Models.FilialViewModel>();
+
+    string StatusVeiculo(int status)
+    {
+        return status switch
+        {
+            1 => "Disponível",
+            2 => "Reservado",
+            3 => "Alugado",
+            4 => "Manutenção",
+            5 => "Inativo",
+            _ => "Desconhecido"
+        };
+    }
+
+    string ClasseStatus(int status)
+    {
+        return status switch
+        {
+            1 => "edit-status-available",
+            2 => "edit-status-reserved",
+            3 => "edit-status-rented",
+            4 => "edit-status-maintenance",
+            5 => "edit-status-inactive",
+            _ => "edit-status-inactive"
+        };
+    }
+
+    var imagemVeiculo =
+        VeiculoImagemHelper.ObterImagem(
+            Model.Marca,
+            Model.Modelo);
+}
+
+<style>
+
+    .vehicle-edit-page {
+        max-width: 1500px;
+        margin: auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    /* HEADER */
+
+    .vehicle-edit-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .vehicle-edit-eyebrow {
+        margin-bottom: 4px;
+        color: #8d849a;
+        font-size: .90rem;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .vehicle-edit-title {
+        margin: 0;
+        color: #fff;
+        font-size: 1.85rem;
+        font-weight: 800;
+    }
+
+    .vehicle-edit-description {
+        margin: 6px 0 0;
+        color: #81778e;
+        font-size: .96rem;
+    }
+
+    .vehicle-edit-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .edit-btn-secondary,
+    .edit-btn-primary {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: .90rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+    .edit-btn-secondary {
+        border: 1px solid rgba(151,71,255,.24);
+        background: rgba(126,44,255,.06);
+        color: #fff;
+    }
+
+        .edit-btn-secondary:hover {
+            color: #fff;
+            border-color: rgba(151,71,255,.45);
+            background: rgba(126,44,255,.12);
+        }
+
+    .edit-btn-primary {
+        border: 1px solid #8b3dff;
+        background: linear-gradient( 135deg, #7c2cff, #9b4dff );
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(126,44,255,.18);
+    }
+
+        .edit-btn-primary:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+    /* RESUMO DO VEÍCULO */
+
+    .vehicle-edit-summary {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        overflow: hidden;
+        margin-bottom: 16px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .vehicle-edit-image-area {
+        position: relative;
+        min-height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 20px;
+        border-right: 1px solid rgba(151,71,255,.12);
+        background: radial-gradient( circle at center, rgba(126,44,255,.13), transparent 65% ), rgba(7,4,13,.5);
+    }
+
+    .vehicle-edit-image {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 210px;
+        max-height: 140px;
+        object-fit: contain;
+    }
+
+    .vehicle-edit-summary-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 25px;
+    }
+
+    .vehicle-edit-summary-label {
+        margin-bottom: 3px;
+        color: #776d82;
+        font-size: .84rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .vehicle-edit-summary-name {
+        margin: 0;
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: 800;
+    }
+
+    .vehicle-edit-summary-meta {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .vehicle-edit-chip {
+        padding: 5px 8px;
+        border: 1px solid rgba(151,71,255,.13);
+        border-radius: 6px;
+        background: rgba(126,44,255,.04);
+        color: #9f95aa;
+        font-size: .84rem;
+    }
+
+    .edit-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: .84rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+        .edit-status::before {
+            content: "";
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+    .edit-status-available {
+        color: #3ce78c;
+        background: rgba(26,192,103,.12);
+    }
+
+    .edit-status-reserved {
+        color: #fbbf24;
+        background: rgba(245,158,11,.12);
+    }
+
+    .edit-status-rented {
+        color: #60a5fa;
+        background: rgba(59,130,246,.13);
+    }
+
+    .edit-status-maintenance {
+        color: #fb923c;
+        background: rgba(249,115,22,.13);
+    }
+
+    .edit-status-inactive {
+        color: #93899d;
+        background: rgba(148,163,184,.10);
+    }
+
+    /* FORM */
+
+    .vehicle-edit-card {
+        overflow: hidden;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .vehicle-edit-section {
+        padding: 22px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+        .vehicle-edit-section:last-of-type {
+            border-bottom: 0;
+        }
+
+    .edit-section-heading {
+        margin-bottom: 18px;
+    }
+
+        .edit-section-heading small {
+            display: block;
+            margin-bottom: 3px;
+            color: #766c81;
+            font-size: .82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .55px;
+        }
+
+        .edit-section-heading h3 {
+            margin: 0;
+            color: #fff;
+            font-size: .9rem;
+            font-weight: 700;
+        }
+
+    .edit-form-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    .edit-col-3 {
+        grid-column: span 3;
+    }
+
+    .edit-col-4 {
+        grid-column: span 4;
+    }
+
+    .edit-col-6 {
+        grid-column: span 6;
+    }
+
+    .edit-col-12 {
+        grid-column: span 12;
+    }
+
+    .edit-field label {
+        display: block;
+        margin-bottom: 6px;
+        color: #aaa0b5;
+        font-size: .88rem;
+        font-weight: 700;
+    }
+
+    .edit-input,
+    .edit-select {
+        width: 100%;
+        min-height: 41px;
+        padding: 9px 11px;
+        border: 1px solid rgba(151,71,255,.17);
+        border-radius: 7px;
+        outline: none;
+        background: rgba(255,255,255,.025);
+        color: #ded8e5;
+        font-size: .90rem;
+        transition: .15s ease;
+    }
+
+        .edit-input:focus,
+        .edit-select:focus {
+            border-color: rgba(151,71,255,.65);
+            background: rgba(126,44,255,.045);
+            box-shadow: 0 0 0 3px rgba(126,44,255,.07);
+        }
+
+        .edit-select option {
+            background: #150d20;
+            color: #fff;
+        }
+
+        .edit-input[readonly] {
+            color: #82788d;
+            background: rgba(255,255,255,.015);
+            cursor: not-allowed;
+        }
+
+    .edit-help {
+        margin-top: 5px;
+        color: #625a6b;
+        font-size: .80rem;
+        line-height: 1.4;
+    }
+
+    .edit-validation {
+        display: block;
+        margin-top: 5px;
+        color: #ff718d;
+        font-size: .82rem;
+    }
+
+    .validation-summary-errors {
+        margin-bottom: 18px;
+        padding: 12px 14px;
+        border: 1px solid rgba(244,63,94,.22);
+        border-radius: 8px;
+        background: rgba(244,63,94,.07);
+        color: #ff91a7;
+        font-size: .86rem;
+    }
+
+        .validation-summary-errors ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+    /* SWITCH ATIVO */
+
+    .edit-active-box {
+        min-height: 100%;
+        display: flex;
+        align-items: center;
+        padding: 13px 14px;
+        border: 1px solid rgba(151,71,255,.13);
+        border-radius: 8px;
+        background: rgba(126,44,255,.025);
+    }
+
+    .edit-active-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+    }
+
+        .edit-active-check input {
+            width: 17px;
+            height: 17px;
+            margin: 0;
+            accent-color: #8b3dff;
+            cursor: pointer;
+        }
+
+        .edit-active-check label {
+            margin: 0;
+            color: #c6bdcf;
+            font-size: .88rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+    /* FOOTER */
+
+    .vehicle-edit-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 18px 22px;
+        background: rgba(6,3,11,.22);
+    }
+
+        .vehicle-edit-footer button {
+            font-family: inherit;
+        }
+
+    @@media (max-width: 1000px) {
+
+        .edit-col-3,
+        .edit-col-4 {
+            grid-column: span 6;
+        }
+
+        .vehicle-edit-summary {
+            grid-template-columns: 200px 1fr;
+        }
+    }
+
+    @@media (max-width: 700px) {
+
+        .vehicle-edit-page {
+            padding: 20px 15px;
+        }
+
+        .vehicle-edit-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .vehicle-edit-header-actions {
+            width: 100%;
+        }
+
+            .vehicle-edit-header-actions a {
+                flex: 1;
+            }
+
+        .vehicle-edit-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .vehicle-edit-image-area {
+            border-right: 0;
+            border-bottom: 1px solid rgba(151,71,255,.12);
+        }
+
+        .vehicle-edit-summary-info {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .edit-col-3,
+        .edit-col-4,
+        .edit-col-6 {
+            grid-column: span 12;
+        }
+
+        .vehicle-edit-footer {
+            flex-direction: column-reverse;
+        }
+
+            .vehicle-edit-footer a,
+            .vehicle-edit-footer button {
+                width: 100%;
+            }
+    }
+
+</style>
+
+
+<div class="vehicle-edit-page">
+
+    <!-- HEADER -->
+
+    <div class="vehicle-edit-header">
+
+        <div>
+
+            <div class="vehicle-edit-eyebrow">
+                Gestão da frota
+            </div>
+
+            <h1 class="vehicle-edit-title">
+                Editar Veículo
+            </h1>
+
+            <p class="vehicle-edit-description">
+                Atualize os dados cadastrais da unidade selecionada.
+            </p>
+
+        </div>
+
+
+        <div class="vehicle-edit-header-actions">
+
+            <a asp-controller="Veiculos"
+               asp-action="Index"
+               class="edit-btn-secondary">
+
+                ← Voltar
+
+            </a>
+
+            <a asp-controller="Veiculos"
+               asp-action="Detalhes"
+               asp-route-id="@Model.Id"
+               class="edit-btn-secondary">
+
+                Ver Detalhes
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- RESUMO -->
+
+    <div class="vehicle-edit-summary">
+
+        <div class="vehicle-edit-image-area">
+
+            <img src="@imagemVeiculo"
+                 alt="@($"{Model.Marca} {Model.Modelo}")"
+                 class="vehicle-edit-image" />
+
+        </div>
+
+
+        <div class="vehicle-edit-summary-info">
+
+            <div>
+
+                <div class="vehicle-edit-summary-label">
+                    Veículo #@Model.Id
+                </div>
+
+                <h2 class="vehicle-edit-summary-name">
+                    @Model.Marca @Model.Modelo
+                </h2>
+
+                <div class="vehicle-edit-summary-meta">
+
+                    <span class="vehicle-edit-chip">
+                        @Model.Placa
+                    </span>
+
+                    <span class="vehicle-edit-chip">
+                        @Model.AnoModelo
+                    </span>
+
+                    <span class="vehicle-edit-chip">
+                        @(Model.KmAtual.ToString("N0")) km
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <span class="
+                edit-status
+                @ClasseStatus(Model.Status)">
+
+                @StatusVeiculo(Model.Status)
+
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- FORMULÁRIO -->
+
+    <div class="vehicle-edit-card">
+
+        <form asp-controller="Veiculos"
+              asp-action="Editar"
+              asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input asp-for="Id"
+                   type="hidden" />
+
+            <input asp-for="KmAtual"
+                   type="hidden" />
+
+            <input asp-for="Status"
+                   type="hidden" />
+
+
+            <!-- IDENTIFICAÇÃO -->
+
+            <div class="vehicle-edit-section">
+
+                <div asp-validation-summary="ModelOnly">
+                </div>
+
+
+                <div class="edit-section-heading">
+
+                    <small>
+                        Identificação
+                    </small>
+
+                    <h3>
+                        Dados principais
+                    </h3>
+
+                </div>
+
+
+                <div class="edit-form-grid">
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="Placa">
+                            Placa
+                        </label>
+
+                        <input asp-for="Placa"
+                               class="edit-input" />
+
+                        <span asp-validation-for="Placa"
+                              class="edit-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="Chassi">
+                            Chassi
+                        </label>
+
+                        <input asp-for="Chassi"
+                               class="edit-input" />
+
+                        <span asp-validation-for="Chassi"
+                              class="edit-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="Renavam">
+                            Renavam
+                        </label>
+
+                        <input asp-for="Renavam"
+                               class="edit-input" />
+
+                        <span asp-validation-for="Renavam"
+                              class="edit-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-6">
+
+                        <label asp-for="Marca">
+                            Marca
+                        </label>
+
+                        <input asp-for="Marca"
+                               class="edit-input" />
+
+                        <span asp-validation-for="Marca"
+                              class="edit-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-6">
+
+                        <label asp-for="Modelo">
+                            Modelo
+                        </label>
+
+                        <input asp-for="Modelo"
+                               class="edit-input" />
+
+                        <span asp-validation-for="Modelo"
+                              class="edit-validation">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ESPECIFICAÇÕES -->
+
+            <div class="vehicle-edit-section">
+
+                <div class="edit-section-heading">
+
+                    <small>
+                        Especificações
+                    </small>
+
+                    <h3>
+                        Características do veículo
+                    </h3>
+
+                </div>
+
+
+                <div class="edit-form-grid">
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="AnoFabricacao">
+                            Ano de Fabricação
+                        </label>
+
+                        <input asp-for="AnoFabricacao"
+                               type="number"
+                               class="edit-input" />
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="AnoModelo">
+                            Ano Modelo
+                        </label>
+
+                        <input asp-for="AnoModelo"
+                               type="number"
+                               class="edit-input" />
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="Cor">
+                            Cor
+                        </label>
+
+                        <input asp-for="Cor"
+                               class="edit-input" />
+
+                        <span asp-validation-for="Cor"
+                              class="edit-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="Combustivel">
+                            Combustível
+                        </label>
+
+                        <select asp-for="Combustivel"
+                                class="edit-select">
+
+                            <option value="1">
+                                Gasolina
+                            </option>
+
+                            <option value="2">
+                                Etanol
+                            </option>
+
+                            <option value="3">
+                                Flex
+                            </option>
+
+                            <option value="4">
+                                Diesel
+                            </option>
+
+                            <option value="5">
+                                Elétrico
+                            </option>
+
+                            <option value="6">
+                                Híbrido
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="Cambio">
+                            Câmbio
+                        </label>
+
+                        <select asp-for="Cambio"
+                                class="edit-select">
+
+                            <option value="1">
+                                Manual
+                            </option>
+
+                            <option value="2">
+                                Automático
+                            </option>
+
+                            <option value="3">
+                                Automatizado
+                            </option>
+
+                            <option value="4">
+                                CVT
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label>
+                            Quilometragem atual
+                        </label>
+
+                        <input type="text"
+                               class="edit-input"
+                               value="@(Model.KmAtual.ToString("N0")) km"
+                               readonly />
+
+                        <div class="edit-help">
+                            Atualizada automaticamente após a devolução.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- OPERAÇÃO -->
+
+            <div class="vehicle-edit-section">
+
+                <div class="edit-section-heading">
+
+                    <small>
+                        Operação
+                    </small>
+
+                    <h3>
+                        Categoria, filial e diária
+                    </h3>
+
+                </div>
+
+
+                <div class="edit-form-grid">
+
+                    <div class="edit-field edit-col-4">
+
+                        <label>
+                            Status
+                        </label>
+
+                        <input type="text"
+                               class="edit-input"
+                               value="@StatusVeiculo(Model.Status)"
+                               readonly />
+
+                        <div class="edit-help">
+                            Atualizado automaticamente pelo sistema.
+                        </div>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="ValorDiaria">
+                            Valor da Diária
+                        </label>
+
+                        <input asp-for="ValorDiaria"
+                               type="number"
+                               step="0.01"
+                               min="0"
+                               class="edit-input" />
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-4">
+
+                        <label asp-for="CategoriaId">
+                            Categoria
+                        </label>
+
+                        <select asp-for="CategoriaId"
+                                class="edit-select">
+
+                            <option value="">
+                                Selecione uma categoria
+                            </option>
+
+                            @foreach (var categoria in categorias)
+                            {
+                                <option value="@categoria.Id">
+                                    @categoria.Nome
+                                </option>
+                            }
+
+                        </select>
+
+                        <span asp-validation-for="CategoriaId"
+                              class="edit-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-6">
+
+                        <label asp-for="FilialId">
+                            Filial
+                        </label>
+
+                        <select asp-for="FilialId"
+                                class="edit-select">
+
+                            <option value="">
+                                Selecione uma filial
+                            </option>
+
+                            @foreach (var filial in filiais)
+                            {
+                                <option value="@filial.Id">
+                                    @filial.Nome - @filial.Cidade/@filial.Estado
+                                </option>
+                            }
+
+                        </select>
+
+                        <span asp-validation-for="FilialId"
+                              class="edit-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="edit-field edit-col-6">
+
+                        <label>
+                            Situação do cadastro
+                        </label>
+
+                        <div class="edit-active-box">
+
+                            <div class="edit-active-check">
+
+                                <input asp-for="IsAtivo" />
+
+                                <label asp-for="IsAtivo">
+                                    Veículo ativo
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- FOOTER -->
+
+            <div class="vehicle-edit-footer">
+
+                <a asp-controller="Veiculos"
+                   asp-action="Index"
+                   class="edit-btn-secondary">
+
+                    Cancelar
+
+                </a>
+
+
+                <button type="submit"
+                        class="edit-btn-primary">
+
+                    Salvar Alterações
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,1028 @@
+﻿@model List<GoCar.Web.Models.FilialViewModel>
+
+@{
+    ViewData["Title"] = "Filiais";
+
+    var totalFiliais = Model.Count;
+    var filiaisAtivas = Model.Count(f => f.IsAtivo);
+    var filiaisInativas = Model.Count(f => !f.IsAtivo);
+
+    var totalCidades =
+        Model
+            .Where(f => !string.IsNullOrWhiteSpace(f.Cidade))
+            .Select(f => $"{f.Cidade}-{f.Estado}")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+}
+
+<style>
+    .branches-page {
+        max-width: 1600px;
+        margin: auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    /* HEADER */
+
+    .branches-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .branches-eyebrow {
+        margin-bottom: 4px;
+        color: #a99fb4;
+        font-size: .90rem;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .branches-title {
+        margin: 0;
+        color: #fff;
+        font-size: 1.85rem;
+        font-weight: 800;
+    }
+
+    .branches-description {
+        margin: 6px 0 0;
+        color: #aaa0b5;
+        font-size: .96rem;
+    }
+
+    .branches-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+    .branch-primary-btn,
+    .branch-secondary-btn {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: .90rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+    .branch-primary-btn {
+        border: 1px solid #8b3dff;
+        background: linear-gradient( 135deg, #7c2cff, #9b4dff );
+        color: #fff;
+        box-shadow: 0 8px 25px rgba(126,44,255,.18);
+    }
+
+        .branch-primary-btn:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+    .branch-secondary-btn {
+        border: 1px solid rgba(151,71,255,.24);
+        background: rgba(126,44,255,.06);
+        color: #fff;
+    }
+
+        .branch-secondary-btn:hover {
+            color: #fff;
+            background: rgba(126,44,255,.12);
+            border-color: rgba(151,71,255,.45);
+        }
+
+    /* RESUMO */
+
+    .branches-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 13px;
+        margin-bottom: 18px;
+    }
+
+    .branch-summary-card {
+        position: relative;
+        overflow: hidden;
+        padding: 16px 17px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 10px;
+        background: linear-gradient( 145deg, rgba(24,13,41,.96), rgba(14,8,25,.96) );
+    }
+
+        .branch-summary-card::after {
+            content: "";
+            position: absolute;
+            width: 75px;
+            height: 75px;
+            right: -35px;
+            top: -35px;
+            border-radius: 50%;
+            background: rgba(139,51,255,.07);
+        }
+
+    .branch-summary-label {
+        color: #aaa0b5;
+        font-size: .86rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .branch-summary-value {
+        margin-top: 5px;
+        color: #fff;
+        font-size: 1.4rem;
+        font-weight: 800;
+    }
+
+    .branch-summary-highlight {
+        color: #c084fc;
+    }
+
+    /* TOOLBAR */
+
+    .branches-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 10px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.97), rgba(13,7,24,.97) );
+    }
+
+    .branches-search {
+        width: min(470px, 100%);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 13px;
+        border: 1px solid rgba(151,71,255,.18);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+    }
+
+        .branches-search span {
+            color: #b6aabd;
+        }
+
+        .branches-search input {
+            width: 100%;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: #fff;
+            font-size: .92rem;
+        }
+
+            .branches-search input::placeholder {
+                color: #8e8499;
+            }
+
+    .branches-toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .branches-count {
+        color: #aaa0b5;
+        font-size: .88rem;
+        white-space: nowrap;
+    }
+
+        .branches-count strong {
+            color: #fff;
+        }
+
+    .branches-filter {
+        padding: 9px 12px;
+        border: 1px solid rgba(151,71,255,.18);
+        border-radius: 8px;
+        outline: none;
+        background: #130b20;
+        color: #ddd5e4;
+        font-size: .90rem;
+    }
+
+    /* TABELA */
+
+    .branches-table-card {
+        overflow: hidden;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .branches-table-wrap {
+        overflow-x: auto;
+    }
+
+    .branches-table {
+        width: 100%;
+        min-width: 1050px;
+        border-collapse: collapse;
+    }
+
+        .branches-table thead {
+            background: rgba(126,44,255,.055);
+        }
+
+        .branches-table th {
+            padding: 13px 15px;
+            border-bottom: 1px solid rgba(151,71,255,.13);
+            color: #a99fb4;
+            font-size: .82rem;
+            font-weight: 700;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: .45px;
+            white-space: nowrap;
+        }
+
+        .branches-table td {
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            color: #bdb5c7;
+            font-size: .90rem;
+            vertical-align: middle;
+        }
+
+        .branches-table tbody tr {
+            transition: .15s ease;
+        }
+
+            .branches-table tbody tr:hover {
+                background: rgba(126,44,255,.035);
+            }
+
+            .branches-table tbody tr:last-child td {
+                border-bottom: 0;
+            }
+
+    .branch-id {
+        color: #a99fb4;
+        font-weight: 700;
+    }
+
+    .branch-name {
+        color: #fff;
+        font-size: .90rem;
+        font-weight: 700;
+    }
+
+    .branch-cnpj {
+        color: #9d93a8;
+        white-space: nowrap;
+    }
+
+    .branch-phone {
+        color: #aaa0b5;
+        white-space: nowrap;
+    }
+
+    .branch-location {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #c2bacb;
+        white-space: nowrap;
+    }
+
+    .branch-location-icon {
+        color: #9d5cf6;
+        font-size: .82rem;
+    }
+
+    .branch-state {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        height: 24px;
+        padding: 0 7px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 6px;
+        background: rgba(126,44,255,.05);
+        color: #c6b6d9;
+        font-size: .82rem;
+        font-weight: 800;
+    }
+
+    /* STATUS */
+
+    .branch-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+        .branch-status::before {
+            content: "";
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+    .branch-status-active {
+        color: #3ce78c;
+        background: rgba(26,192,103,.12);
+    }
+
+    .branch-status-inactive {
+        color: #b4aabd;
+        background: rgba(148,163,184,.10);
+    }
+
+    /* AÇÕES */
+
+    .branch-row-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .branch-action {
+        min-height: 29px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 9px;
+        border: 1px solid rgba(151,71,255,.18);
+        border-radius: 6px;
+        background: rgba(255,255,255,.02);
+        color: #fff;
+        text-decoration: none;
+        font-size: .82rem;
+        font-weight: 700;
+        transition: .15s ease;
+        cursor: pointer;
+    }
+
+        .branch-action:hover {
+            color: #fff;
+            border-color: rgba(151,71,255,.4);
+            background: rgba(126,44,255,.09);
+        }
+
+    .branch-action-edit {
+        color: #fff;
+        background: rgba(126,44,255,.07);
+    }
+
+    .branch-action-danger {
+        color: #ff718d;
+        border-color: rgba(244,63,94,.18);
+        background: rgba(244,63,94,.055);
+    }
+
+        .branch-action-danger:hover {
+            color: #ff9bae;
+            border-color: rgba(244,63,94,.4);
+            background: rgba(244,63,94,.10);
+        }
+
+    .branch-action-success {
+        color: #3ce78c;
+        border-color: rgba(26,192,103,.20);
+        background: rgba(26,192,103,.06);
+    }
+
+        .branch-action-success:hover {
+            color: #65f3a5;
+            border-color: rgba(26,192,103,.4);
+            background: rgba(26,192,103,.10);
+        }
+
+    .branch-action-form {
+        margin: 0;
+    }
+
+    /* SEM RESULTADO */
+
+    .branches-empty {
+        padding: 55px 25px;
+        text-align: center;
+    }
+
+    .branches-empty-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 13px;
+        border-radius: 50%;
+        color: #a855f7;
+        background: rgba(139,51,255,.12);
+        font-size: 1.1rem;
+    }
+
+    .branches-empty h3 {
+        margin-bottom: 6px;
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    .branches-empty p {
+        margin: 0;
+        color: #aaa0b5;
+        font-size: .90rem;
+    }
+
+    .branch-hidden {
+        display: none !important;
+    }
+
+    @@media (max-width: 1000px) {
+        .branches-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .branches-page {
+            padding: 20px 15px;
+        }
+
+        .branches-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .branches-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .branches-search {
+            width: 100%;
+        }
+
+        .branches-toolbar-right {
+            justify-content: space-between;
+        }
+
+        .branches-summary {
+            grid-template-columns: 1fr;
+        }
+    }
+
+</style>
+
+<div class="branches-page">
+
+    <div class="branches-header">
+
+        <div>
+
+            <div class="branches-eyebrow">
+                Gestão operacional
+            </div>
+
+            <h1 class="branches-title">
+                Filiais
+            </h1>
+
+            <p class="branches-description">
+                Gerencie as unidades e pontos de atendimento da GoCar.
+            </p>
+
+        </div>
+
+        <div class="branches-actions">
+
+            <a asp-controller="Filiais"
+               asp-action="Criar"
+               class="branch-primary-btn">
+
+                + Nova Filial
+
+            </a>
+
+            <a asp-controller="Dashboard"
+               asp-action="Index"
+               class="branch-secondary-btn">
+
+                ← Dashboard
+
+            </a>
+
+        </div>
+
+    </div>
+
+    @if (TempData["Sucesso"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Sucesso"]
+        </div>
+    }
+
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Erro"]
+        </div>
+    }
+
+    @if (ViewBag.MensagemErro != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.MensagemErro
+        </div>
+    }
+
+    <div class="branches-summary">
+
+        <div class="branch-summary-card">
+
+            <div class="branch-summary-label">
+                Total de Filiais
+            </div>
+
+            <div class="branch-summary-value">
+                @totalFiliais
+            </div>
+
+        </div>
+
+        <div class="branch-summary-card">
+
+            <div class="branch-summary-label">
+                Filiais Ativas
+            </div>
+
+            <div class="branch-summary-value">
+                @filiaisAtivas
+            </div>
+
+        </div>
+
+        <div class="branch-summary-card">
+
+            <div class="branch-summary-label">
+                Filiais Inativas
+            </div>
+
+            <div class="branch-summary-value">
+                @filiaisInativas
+            </div>
+
+        </div>
+
+        <div class="branch-summary-card">
+
+            <div class="branch-summary-label">
+                Cidades Atendidas
+            </div>
+
+            <div class="
+                branch-summary-value
+                branch-summary-highlight">
+
+                @totalCidades
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="branches-toolbar">
+
+        <div class="branches-search">
+
+            <span>
+                ⌕
+            </span>
+
+            <input id="branchSearch"
+                   type="text"
+                   placeholder="Buscar por filial, CNPJ, telefone ou cidade..." />
+
+        </div>
+
+        <div class="branches-toolbar-right">
+
+            <span class="branches-count">
+
+                <strong id="branchCount">
+                    @Model.Count
+                </strong>
+
+                filiais
+
+            </span>
+
+            <select id="branchStatusFilter"
+                    class="branches-filter">
+
+                <option value="">
+                    Todos os status
+                </option>
+
+                <option value="ativa">
+                    Ativas
+                </option>
+
+                <option value="inativa">
+                    Inativas
+                </option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+    <div class="branches-table-card">
+
+        @if (Model.Count > 0)
+        {
+            <div class="branches-table-wrap">
+
+                <table class="branches-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>ID</th>
+                            <th>Filial</th>
+                            <th>CNPJ</th>
+                            <th>Telefone</th>
+                            <th>Cidade</th>
+                            <th>UF</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var filial in Model)
+                        {
+                            var statusFiltro =
+                                filial.IsAtivo
+                                    ? "ativa"
+                                    : "inativa";
+
+                            var textoBusca =
+                                $"{filial.Id} " +
+                                $"{filial.Nome} " +
+                                $"{filial.CNPJ} " +
+                                $"{filial.Telefone} " +
+                                $"{filial.Email} " +
+                                $"{filial.Endereco} " +
+                                $"{filial.Bairro} " +
+                                $"{filial.Cidade} " +
+                                $"{filial.Estado} " +
+                                $"{filial.CEP}";
+
+                            <tr class="branch-item"
+                                data-status="@statusFiltro"
+                                data-search="@textoBusca">
+
+                                <td>
+
+                                    <span class="branch-id">
+                                        #@filial.Id
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <span class="branch-name">
+                                        @filial.Nome
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <span class="branch-cnpj">
+                                        @filial.CNPJ
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <span class="branch-phone">
+                                        @filial.Telefone
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <div class="branch-location">
+
+                                        <span class="branch-location-icon">
+                                            ●
+                                        </span>
+
+                                        <span>
+                                            @filial.Cidade
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+
+                                    <span class="branch-state">
+                                        @filial.Estado
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    @if (filial.IsAtivo)
+                                    {
+                                        <span class="
+                                            branch-status
+                                            branch-status-active">
+
+                                            Ativa
+
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="
+                                            branch-status
+                                            branch-status-inactive">
+
+                                            Inativa
+
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td>
+
+                                    <div class="branch-row-actions">
+
+                                        <a asp-controller="Filiais"
+                                           asp-action="Detalhes"
+                                           asp-route-id="@filial.Id"
+                                           class="branch-action">
+
+                                            Visualizar
+
+                                        </a>
+
+                                        <a asp-controller="Filiais"
+                                           asp-action="Editar"
+                                           asp-route-id="@filial.Id"
+                                           class="
+                                            branch-action
+                                            branch-action-edit">
+
+                                            Editar
+
+                                        </a>
+
+                                        @if (filial.IsAtivo)
+                                        {
+                                            <form asp-controller="Filiais"
+                                                  asp-action="Desativar"
+                                                  asp-route-id="@filial.Id"
+                                                  method="post"
+                                                  class="branch-action-form"
+                                                  onsubmit="return confirm('Deseja realmente desativar esta filial?');">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="
+                                                    branch-action
+                                                    branch-action-danger">
+
+                                                    Desativar
+
+                                                </button>
+
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-controller="Filiais"
+                                                  asp-action="Ativar"
+                                                  asp-route-id="@filial.Id"
+                                                  method="post"
+                                                  class="branch-action-form"
+                                                  onsubmit="return confirm('Deseja reativar esta filial?');">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="
+                                                    branch-action
+                                                    branch-action-success">
+
+                                                    Ativar
+
+                                                </button>
+
+                                            </form>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div id="branchNoResults"
+                 class="branches-empty d-none">
+
+                <div class="branches-empty-icon">
+                    ◉
+                </div>
+
+                <h3>
+                    Nenhuma filial encontrada
+                </h3>
+
+                <p>
+                    Nenhuma filial corresponde aos filtros selecionados.
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="branches-empty">
+
+                <div class="branches-empty-icon">
+                    ◉
+                </div>
+
+                <h3>
+                    Nenhuma filial encontrada
+                </h3>
+
+                <p>
+                    Ainda não existem filiais cadastradas.
+                </p>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function() {
+
+                const search =
+                    document.getElementById(
+                        "branchSearch"
+                    );
+
+                const statusFilter =
+                    document.getElementById(
+                        "branchStatusFilter"
+                    );
+
+                const count =
+                    document.getElementById(
+                        "branchCount"
+                    );
+
+                const noResults =
+                    document.getElementById(
+                        "branchNoResults"
+                    );
+
+                const items =
+                    document.querySelectorAll(
+                        ".branch-item"
+                    );
+
+                function normalizarTexto(texto) {
+
+                    return (texto || "")
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(
+                            /[\u0300-\u036f]/g,
+                            ""
+                        );
+                }
+
+                function filtrarFiliais() {
+
+                    const texto =
+                        normalizarTexto(
+                            search?.value.trim()
+                        );
+
+                    const status =
+                        statusFilter?.value || "";
+
+                    let visiveis = 0;
+
+                    items.forEach(
+                        function(item) {
+
+                            const dados =
+                                normalizarTexto(
+                                    item.dataset.search
+                                );
+
+                            const statusItem =
+                                item.dataset.status
+                                || "";
+
+                            const correspondeTexto =
+                                !texto ||
+                                dados.includes(texto);
+
+                            const correspondeStatus =
+                                !status ||
+                                statusItem === status;
+
+                            const mostrar =
+                                correspondeTexto &&
+                                correspondeStatus;
+
+                            item.classList.toggle(
+                                "branch-hidden",
+                                !mostrar
+                            );
+
+                            if (mostrar) {
+                                visiveis++;
+                            }
+
+                        }
+                    );
+
+                    if (count) {
+                        count.textContent =
+                            visiveis;
+                    }
+
+                    if (noResults) {
+
+                        noResults.classList.toggle(
+                            "d-none",
+                            visiveis > 0
+                        );
+                    }
+
+                }
+
+                search?.addEventListener(
+                    "input",
+                    filtrarFiliais
+                );
+
+                statusFilter?.addEventListener(
+                    "change",
+                    filtrarFiliais
+                );
+
+            }
+        );
+
+    </script>
+}

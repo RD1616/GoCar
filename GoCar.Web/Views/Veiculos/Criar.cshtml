@@ -1,0 +1,917 @@
+﻿@model GoCar.Web.Models.VeiculoViewModel
+
+@{
+    ViewData["Title"] = "Novo Veículo";
+
+    var categorias =
+        ViewBag.Categorias as List<GoCar.Web.Models.CategoriaViewModel>
+        ?? new List<GoCar.Web.Models.CategoriaViewModel>();
+
+    var filiais =
+        ViewBag.Filiais as List<GoCar.Web.Models.FilialViewModel>
+        ?? new List<GoCar.Web.Models.FilialViewModel>();
+}
+
+<style>
+
+    .vehicle-create-page {
+        max-width: 1500px;
+        margin: auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    /* HEADER */
+
+    .vehicle-create-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .vehicle-create-eyebrow {
+        margin-bottom: 4px;
+        color: #8d849a;
+        font-size: .90rem;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .vehicle-create-title {
+        margin: 0;
+        color: #fff;
+        font-size: 1.85rem;
+        font-weight: 800;
+    }
+
+    .vehicle-create-description {
+        margin: 6px 0 0;
+        color: #81778e;
+        font-size: .96rem;
+    }
+
+    /* BUTTONS */
+
+    .create-btn-secondary,
+    .create-btn-primary {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: .90rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+    .create-btn-secondary {
+        border: 1px solid rgba(151,71,255,.24);
+        background: rgba(126,44,255,.06);
+        color: #fff;
+    }
+
+        .create-btn-secondary:hover {
+            color: #fff;
+            border-color: rgba(151,71,255,.45);
+            background: rgba(126,44,255,.12);
+        }
+
+    .create-btn-primary {
+        border: 1px solid #8b3dff;
+        background: linear-gradient( 135deg, #7c2cff, #9b4dff );
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(126,44,255,.18);
+    }
+
+        .create-btn-primary:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+    /* INTRO */
+
+    .vehicle-create-intro {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 25px;
+        margin-bottom: 16px;
+        padding: 22px 24px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: radial-gradient( circle at 90% 20%, rgba(126,44,255,.12), transparent 32% ), linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .vehicle-create-intro-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .vehicle-create-intro small {
+        display: block;
+        margin-bottom: 4px;
+        color: #9a6dde;
+        font-size: .82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .vehicle-create-intro h2 {
+        margin: 0;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .vehicle-create-intro p {
+        max-width: 650px;
+        margin: 6px 0 0;
+        color: #776d82;
+        font-size: .90rem;
+        line-height: 1.6;
+    }
+
+    .vehicle-create-icon {
+        position: relative;
+        z-index: 2;
+        width: 55px;
+        height: 55px;
+        flex: 0 0 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(151,71,255,.18);
+        border-radius: 12px;
+        background: rgba(126,44,255,.08);
+        color: #b76cff;
+        font-size: 1.5rem;
+        font-weight: 300;
+    }
+
+    /* CARD */
+
+    .vehicle-create-card {
+        overflow: hidden;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .vehicle-create-section {
+        padding: 22px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+        .vehicle-create-section:last-of-type {
+            border-bottom: 0;
+        }
+
+    .create-section-heading {
+        margin-bottom: 18px;
+    }
+
+        .create-section-heading small {
+            display: block;
+            margin-bottom: 3px;
+            color: #766c81;
+            font-size: .82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .55px;
+        }
+
+        .create-section-heading h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .create-section-heading p {
+            margin: 5px 0 0;
+            color: #665d70;
+            font-size: .86rem;
+        }
+
+    /* GRID */
+
+    .create-form-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    .create-col-4 {
+        grid-column: span 4;
+    }
+
+    .create-col-6 {
+        grid-column: span 6;
+    }
+
+    .create-col-12 {
+        grid-column: span 12;
+    }
+
+    /* INPUT */
+
+    .create-field label {
+        display: block;
+        margin-bottom: 6px;
+        color: #aaa0b5;
+        font-size: .88rem;
+        font-weight: 700;
+    }
+
+    .create-input,
+    .create-select {
+        width: 100%;
+        min-height: 41px;
+        padding: 9px 11px;
+        border: 1px solid rgba(151,71,255,.17);
+        border-radius: 7px;
+        outline: none;
+        background: rgba(255,255,255,.025);
+        color: #ded8e5;
+        font-size: .90rem;
+        transition: .15s ease;
+    }
+
+        .create-input:focus,
+        .create-select:focus {
+            border-color: rgba(151,71,255,.65);
+            background: rgba(126,44,255,.045);
+            box-shadow: 0 0 0 3px rgba(126,44,255,.07);
+        }
+
+        .create-input::placeholder {
+            color: #51495a;
+        }
+
+        .create-select option {
+            background: #150d20;
+            color: #fff;
+        }
+
+    .create-validation {
+        display: block;
+        margin-top: 5px;
+        color: #ff718d;
+        font-size: .82rem;
+    }
+
+    .create-help {
+        margin-top: 5px;
+        color: #625a6b;
+        font-size: .80rem;
+        line-height: 1.4;
+    }
+
+    /* VALIDATION */
+
+    .validation-summary-errors {
+        margin-bottom: 18px;
+        padding: 12px 14px;
+        border: 1px solid rgba(244,63,94,.22);
+        border-radius: 8px;
+        background: rgba(244,63,94,.07);
+        color: #ff91a7;
+        font-size: .88rem;
+    }
+
+        .validation-summary-errors ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+    /* STATUS */
+
+    .create-status-help {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        margin-top: 13px;
+        padding: 11px 12px;
+        border: 1px solid rgba(151,71,255,.11);
+        border-radius: 7px;
+        background: rgba(126,44,255,.025);
+    }
+
+    .create-status-help-icon {
+        color: #9f5df6;
+        font-size: .92rem;
+        line-height: 1;
+        margin-top: 1px;
+    }
+
+    .create-status-help-text {
+        color: #716779;
+        font-size: .82rem;
+        line-height: 1.5;
+    }
+
+    /* FOOTER */
+
+    .vehicle-create-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 18px 22px;
+        background: rgba(6,3,11,.22);
+    }
+
+        .vehicle-create-footer button {
+            font-family: inherit;
+        }
+
+    @@media (max-width: 900px) {
+
+        .create-col-4 {
+            grid-column: span 6;
+        }
+    }
+
+    @@media (max-width: 700px) {
+
+        .vehicle-create-page {
+            padding: 20px 15px;
+        }
+
+        .vehicle-create-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+            .vehicle-create-header .create-btn-secondary {
+                width: 100%;
+            }
+
+        .vehicle-create-intro {
+            align-items: flex-start;
+        }
+
+        .vehicle-create-icon {
+            display: none;
+        }
+
+        .create-col-4,
+        .create-col-6 {
+            grid-column: span 12;
+        }
+
+        .vehicle-create-footer {
+            flex-direction: column-reverse;
+        }
+
+            .vehicle-create-footer a,
+            .vehicle-create-footer button {
+                width: 100%;
+            }
+    }
+
+</style>
+
+
+<div class="vehicle-create-page">
+
+    <!-- HEADER -->
+
+    <div class="vehicle-create-header">
+
+        <div>
+
+            <div class="vehicle-create-eyebrow">
+                Gestão da frota
+            </div>
+
+            <h1 class="vehicle-create-title">
+                Novo Veículo
+            </h1>
+
+            <p class="vehicle-create-description">
+                Cadastre uma nova unidade na frota da GoCar.
+            </p>
+
+        </div>
+
+
+        <a asp-controller="Veiculos"
+           asp-action="Index"
+           class="create-btn-secondary">
+
+            ← Voltar para a frota
+
+        </a>
+
+    </div>
+
+
+    <!-- INTRO -->
+
+    <div class="vehicle-create-intro">
+
+        <div class="vehicle-create-intro-content">
+
+            <small>
+                Nova unidade
+            </small>
+
+            <h2>
+                Informações do veículo
+            </h2>
+
+            <p>
+                Preencha os dados de identificação, características
+                e informações operacionais para adicionar o veículo
+                à frota.
+            </p>
+
+        </div>
+
+
+        <div class="vehicle-create-icon">
+            +
+        </div>
+
+    </div>
+
+
+    <!-- FORMULÁRIO -->
+
+    <div class="vehicle-create-card">
+
+        <form asp-controller="Veiculos"
+              asp-action="Criar"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+
+            <!-- IDENTIFICAÇÃO -->
+
+            <div class="vehicle-create-section">
+
+                <div asp-validation-summary="ModelOnly">
+                </div>
+
+
+                <div class="create-section-heading">
+
+                    <small>
+                        Identificação
+                    </small>
+
+                    <h3>
+                        Dados principais
+                    </h3>
+
+                    <p>
+                        Informações utilizadas para identificar
+                        a unidade dentro da frota.
+                    </p>
+
+                </div>
+
+
+                <div class="create-form-grid">
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="Placa">
+                            Placa
+                        </label>
+
+                        <input asp-for="Placa"
+                               class="create-input"
+                               placeholder="Ex: ABC1D23" />
+
+                        <span asp-validation-for="Placa"
+                              class="create-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="Chassi">
+                            Chassi
+                        </label>
+
+                        <input asp-for="Chassi"
+                               class="create-input"
+                               placeholder="Número do chassi" />
+
+                        <span asp-validation-for="Chassi"
+                              class="create-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="Renavam">
+                            Renavam
+                        </label>
+
+                        <input asp-for="Renavam"
+                               class="create-input"
+                               placeholder="Número do Renavam" />
+
+                        <span asp-validation-for="Renavam"
+                              class="create-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="create-field create-col-6">
+
+                        <label asp-for="Marca">
+                            Marca
+                        </label>
+
+                        <input asp-for="Marca"
+                               class="create-input"
+                               placeholder="Ex: Chevrolet" />
+
+                        <span asp-validation-for="Marca"
+                              class="create-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="create-field create-col-6">
+
+                        <label asp-for="Modelo">
+                            Modelo
+                        </label>
+
+                        <input asp-for="Modelo"
+                               class="create-input"
+                               placeholder="Ex: Onix 1.0" />
+
+                        <span asp-validation-for="Modelo"
+                              class="create-validation">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- CARACTERÍSTICAS -->
+
+            <div class="vehicle-create-section">
+
+                <div class="create-section-heading">
+
+                    <small>
+                        Características
+                    </small>
+
+                    <h3>
+                        Especificações do veículo
+                    </h3>
+
+                    <p>
+                        Informe as características físicas
+                        e mecânicas da unidade.
+                    </p>
+
+                </div>
+
+
+                <div class="create-form-grid">
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="AnoFabricacao">
+                            Ano de Fabricação
+                        </label>
+
+                        <input asp-for="AnoFabricacao"
+                               type="number"
+                               class="create-input"
+                               placeholder="2026" />
+
+                    </div>
+
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="AnoModelo">
+                            Ano Modelo
+                        </label>
+
+                        <input asp-for="AnoModelo"
+                               type="number"
+                               class="create-input"
+                               placeholder="2026" />
+
+                    </div>
+
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="Cor">
+                            Cor
+                        </label>
+
+                        <input asp-for="Cor"
+                               class="create-input"
+                               placeholder="Ex: Preto" />
+
+                        <span asp-validation-for="Cor"
+                              class="create-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="create-field create-col-6">
+
+                        <label asp-for="Combustivel">
+                            Combustível
+                        </label>
+
+                        <select asp-for="Combustivel"
+                                class="create-select">
+
+                            <option value="1">
+                                Gasolina
+                            </option>
+
+                            <option value="2">
+                                Etanol
+                            </option>
+
+                            <option value="3">
+                                Flex
+                            </option>
+
+                            <option value="4">
+                                Diesel
+                            </option>
+
+                            <option value="5">
+                                Elétrico
+                            </option>
+
+                            <option value="6">
+                                Híbrido
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="create-field create-col-6">
+
+                        <label asp-for="Cambio">
+                            Câmbio
+                        </label>
+
+                        <select asp-for="Cambio"
+                                class="create-select">
+
+                            <option value="1">
+                                Manual
+                            </option>
+
+                            <option value="2">
+                                Automático
+                            </option>
+
+                            <option value="3">
+                                Automatizado
+                            </option>
+
+                            <option value="4">
+                                CVT
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- OPERAÇÃO -->
+
+            <div class="vehicle-create-section">
+
+                <div class="create-section-heading">
+
+                    <small>
+                        Operação
+                    </small>
+
+                    <h3>
+                        Dados da frota
+                    </h3>
+
+                    <p>
+                        Defina a situação inicial, quilometragem,
+                        valor, categoria e filial.
+                    </p>
+
+                </div>
+
+
+                <div class="create-form-grid">
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="Status">
+                            Status
+                        </label>
+
+                        <select asp-for="Status"
+                                class="create-select">
+
+                            <option value="1">
+                                Disponível
+                            </option>
+
+                            <option value="2">
+                                Reservado
+                            </option>
+
+                            <option value="3">
+                                Alugado
+                            </option>
+
+                            <option value="4">
+                                Manutenção
+                            </option>
+
+                            <option value="5">
+                                Inativo
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="KmAtual">
+                            Quilometragem
+                        </label>
+
+                        <input asp-for="KmAtual"
+                               type="number"
+                               min="0"
+                               class="create-input"
+                               placeholder="0" />
+
+                    </div>
+
+
+                    <div class="create-field create-col-4">
+
+                        <label asp-for="ValorDiaria">
+                            Valor da Diária
+                        </label>
+
+                        <input asp-for="ValorDiaria"
+                               type="number"
+                               step="0.01"
+                               min="0"
+                               class="create-input"
+                               placeholder="0,00" />
+
+                    </div>
+
+
+                    <div class="create-field create-col-6">
+
+                        <label asp-for="CategoriaId">
+                            Categoria
+                        </label>
+
+                        <select asp-for="CategoriaId"
+                                class="create-select">
+
+                            <option value="">
+                                Selecione uma categoria
+                            </option>
+
+                            @foreach (var categoria in categorias)
+                            {
+                                <option value="@categoria.Id">
+                                    @categoria.Nome
+                                </option>
+                            }
+
+                        </select>
+
+                        <span asp-validation-for="CategoriaId"
+                              class="create-validation">
+                        </span>
+
+                    </div>
+
+
+                    <div class="create-field create-col-6">
+
+                        <label asp-for="FilialId">
+                            Filial
+                        </label>
+
+                        <select asp-for="FilialId"
+                                class="create-select">
+
+                            <option value="">
+                                Selecione uma filial
+                            </option>
+
+                            @foreach (var filial in filiais)
+                            {
+                                <option value="@filial.Id">
+                                    @filial.Nome - @filial.Cidade/@filial.Estado
+                                </option>
+                            }
+
+                        </select>
+
+                        <span asp-validation-for="FilialId"
+                              class="create-validation">
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="create-status-help">
+
+                    <span class="create-status-help-icon">
+                        ◉
+                    </span>
+
+                    <div class="create-status-help-text">
+
+                        Após o cadastro, o status e a quilometragem
+                        passam a ser atualizados conforme as operações
+                        de reserva, locação e devolução do veículo.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- FOOTER -->
+
+            <div class="vehicle-create-footer">
+
+                <a asp-controller="Veiculos"
+                   asp-action="Index"
+                   class="create-btn-secondary">
+
+                    Cancelar
+
+                </a>
+
+
+                <button type="submit"
+                        class="create-btn-primary">
+
+                    Cadastrar Veículo
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

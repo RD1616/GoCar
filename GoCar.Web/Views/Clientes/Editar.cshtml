@@ -1,0 +1,590 @@
+﻿@model GoCar.Web.Models.ClienteViewModel
+
+@{
+    ViewData["Title"] = "Editar Cliente";
+
+    var iniciais = "?";
+
+    if (!string.IsNullOrWhiteSpace(Model.Nome))
+    {
+        var partes = Model.Nome
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        iniciais = partes.Length >= 2
+            ? $"{partes[0][0]}{partes[^1][0]}".ToUpper()
+            : partes[0][0].ToString().ToUpper();
+    }
+}
+
+<style>
+    .client-edit-page {
+        max-width: 1500px;
+        margin: auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    .client-edit-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .client-edit-eyebrow {
+        margin-bottom: 5px;
+        color: #b0a5bb;
+        font-size: .9rem;
+        font-weight: 650;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .client-edit-title {
+        margin: 0;
+        color: #fff;
+        font-size: 2rem;
+        font-weight: 800;
+    }
+
+    .client-edit-description {
+        margin: 7px 0 0;
+        color: #aaa0b5;
+        font-size: .96rem;
+        line-height: 1.5;
+    }
+
+    .edit-btn-secondary,
+    .edit-btn-primary {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 17px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: .92rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+    .edit-btn-secondary {
+        border: 1px solid rgba(151,71,255,.28);
+        background: rgba(126,44,255,.08);
+        color: #fff !important;
+    }
+
+        .edit-btn-secondary:visited,
+        .edit-btn-secondary:focus,
+        .edit-btn-secondary:active {
+            color: #fff !important;
+        }
+
+        .edit-btn-secondary:hover {
+            color: #fff !important;
+            border-color: rgba(151,71,255,.52);
+            background: rgba(126,44,255,.16);
+        }
+
+    .edit-btn-primary {
+        border: 1px solid #8b3dff;
+        background: linear-gradient(135deg,#7c2cff,#9b4dff);
+        color: #fff !important;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(126,44,255,.18);
+    }
+
+        .edit-btn-primary:hover {
+            color: #fff !important;
+            transform: translateY(-1px);
+        }
+
+    .client-edit-profile {
+        display: flex;
+        align-items: center;
+        gap: 17px;
+        margin-bottom: 16px;
+        padding: 21px 22px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: radial-gradient( circle at 90% 20%, rgba(126,44,255,.12), transparent 30% ), linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .client-edit-avatar {
+        width: 58px;
+        height: 58px;
+        flex: 0 0 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(151,71,255,.25);
+        border-radius: 50%;
+        background: rgba(126,44,255,.10);
+        color: #c49aff;
+        font-size: 1.05rem;
+        font-weight: 800;
+    }
+
+    .client-edit-profile small {
+        color: #aaa0b5;
+        font-size: .82rem;
+        font-weight: 650;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .client-edit-profile h2 {
+        margin: 4px 0 0;
+        color: #fff;
+        font-size: 1.15rem;
+        font-weight: 750;
+    }
+
+    .client-edit-card {
+        overflow: hidden;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .client-edit-section {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+    .edit-section-heading {
+        margin-bottom: 20px;
+    }
+
+        .edit-section-heading small {
+            display: block;
+            margin-bottom: 4px;
+            color: #aaa0b5;
+            font-size: .82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .55px;
+        }
+
+        .edit-section-heading h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+    .edit-form-grid {
+        display: grid;
+        grid-template-columns: repeat(12,minmax(0,1fr));
+        gap: 17px;
+    }
+
+    .edit-col-4 {
+        grid-column: span 4;
+    }
+
+    .edit-col-6 {
+        grid-column: span 6;
+    }
+
+    .edit-col-8 {
+        grid-column: span 8;
+    }
+
+    .edit-col-12 {
+        grid-column: span 12;
+    }
+
+    .edit-field label {
+        display: block;
+        margin-bottom: 7px;
+        color: #c0b6c9;
+        font-size: .88rem;
+        font-weight: 700;
+    }
+
+    .edit-input {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid rgba(151,71,255,.20);
+        border-radius: 7px;
+        outline: none;
+        background: rgba(255,255,255,.025);
+        color: #f0ebf4;
+        font-size: .94rem;
+        transition: .15s ease;
+    }
+
+        .edit-input:focus {
+            border-color: rgba(151,71,255,.65);
+            background: rgba(126,44,255,.045);
+            box-shadow: 0 0 0 3px rgba(126,44,255,.07);
+        }
+
+    .edit-validation {
+        display: block;
+        margin-top: 6px;
+        color: #ff8299;
+        font-size: .82rem;
+    }
+
+    .validation-summary-errors {
+        margin-bottom: 18px;
+        padding: 13px 15px;
+        border: 1px solid rgba(244,63,94,.22);
+        border-radius: 8px;
+        background: rgba(244,63,94,.07);
+        color: #ff9caf;
+        font-size: .88rem;
+        line-height: 1.5;
+    }
+
+        .validation-summary-errors ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+    .client-active-box {
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+        padding: 12px 14px;
+        border: 1px solid rgba(151,71,255,.15);
+        border-radius: 8px;
+        background: rgba(126,44,255,.025);
+    }
+
+    .client-active-check {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+        .client-active-check input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: #8b3dff;
+            cursor: pointer;
+        }
+
+        .client-active-check label {
+            margin: 0;
+            color: #ddd5e4;
+            font-size: .92rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+    .client-edit-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 9px;
+        padding: 19px 22px;
+        background: rgba(6,3,11,.22);
+    }
+
+    @@media (max-width: 850px) {
+        .edit-col-4,
+        .edit-col-8 {
+            grid-column: span 6;
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .client-edit-page {
+            padding: 20px 15px;
+        }
+
+        .client-edit-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+            .client-edit-header > a {
+                width: 100%;
+            }
+
+        .edit-col-4,
+        .edit-col-6,
+        .edit-col-8 {
+            grid-column: span 12;
+        }
+
+        .client-edit-footer {
+            flex-direction: column-reverse;
+        }
+
+            .client-edit-footer a,
+            .client-edit-footer button {
+                width: 100%;
+            }
+    }
+</style>
+
+<div class="client-edit-page">
+
+    <div class="client-edit-header">
+
+        <div>
+            <div class="client-edit-eyebrow">
+                Gestão de clientes
+            </div>
+
+            <h1 class="client-edit-title">
+                Editar Cliente
+            </h1>
+
+            <p class="client-edit-description">
+                Atualize os dados pessoais, habilitação e endereço.
+            </p>
+        </div>
+
+        <a asp-controller="Clientes"
+           asp-action="Detalhes"
+           asp-route-id="@Model.Id"
+           class="edit-btn-secondary">
+            ← Detalhes
+        </a>
+
+    </div>
+
+    <div class="client-edit-profile">
+
+        <div class="client-edit-avatar">
+            @iniciais
+        </div>
+
+        <div>
+            <small>
+                Cliente #@Model.Id
+            </small>
+
+            <h2>
+                @Model.Nome
+            </h2>
+        </div>
+
+    </div>
+
+    <div class="client-edit-card">
+
+        <form asp-controller="Clientes"
+              asp-action="Editar"
+              asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   asp-for="Id" />
+
+            <input type="hidden"
+                   asp-for="DataCadastro" />
+
+            <div class="client-edit-section">
+
+                <div asp-validation-summary="ModelOnly">
+                </div>
+
+                <div class="edit-section-heading">
+                    <small>Cadastro</small>
+                    <h3>Dados pessoais</h3>
+                </div>
+
+                <div class="edit-form-grid">
+
+                    <div class="edit-field edit-col-6">
+                        <label asp-for="Nome">Nome</label>
+
+                        <input asp-for="Nome"
+                               class="edit-input" />
+
+                        <span asp-validation-for="Nome"
+                              class="edit-validation">
+                        </span>
+                    </div>
+
+                    <div class="edit-field edit-col-6">
+                        <label asp-for="CPF">CPF</label>
+
+                        <input asp-for="CPF"
+                               class="edit-input" />
+
+                        <span asp-validation-for="CPF"
+                              class="edit-validation">
+                        </span>
+                    </div>
+
+                    <div class="edit-field edit-col-6">
+                        <label asp-for="DataNascimento">
+                            Data de Nascimento
+                        </label>
+
+                        <input asp-for="DataNascimento"
+                               type="date"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-6">
+                        <label asp-for="Telefone">
+                            Telefone
+                        </label>
+
+                        <input asp-for="Telefone"
+                               class="edit-input" />
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="client-edit-section">
+
+                <div class="edit-section-heading">
+                    <small>Habilitação</small>
+                    <h3>Dados da CNH</h3>
+                </div>
+
+                <div class="edit-form-grid">
+
+                    <div class="edit-field edit-col-4">
+                        <label asp-for="CNH">CNH</label>
+
+                        <input asp-for="CNH"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-4">
+                        <label asp-for="CategoriaCNH">
+                            Categoria CNH
+                        </label>
+
+                        <input asp-for="CategoriaCNH"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-4">
+                        <label asp-for="DataValidadeCNH">
+                            Validade da CNH
+                        </label>
+
+                        <input asp-for="DataValidadeCNH"
+                               type="date"
+                               class="edit-input" />
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="client-edit-section">
+
+                <div class="edit-section-heading">
+                    <small>Localização</small>
+                    <h3>Endereço do cliente</h3>
+                </div>
+
+                <div class="edit-form-grid">
+
+                    <div class="edit-field edit-col-8">
+                        <label asp-for="Endereco">
+                            Endereço
+                        </label>
+
+                        <input asp-for="Endereco"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-4">
+                        <label asp-for="Numero">
+                            Número
+                        </label>
+
+                        <input asp-for="Numero"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-4">
+                        <label asp-for="Bairro">
+                            Bairro
+                        </label>
+
+                        <input asp-for="Bairro"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-4">
+                        <label asp-for="CEP">
+                            CEP
+                        </label>
+
+                        <input asp-for="CEP"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-4">
+                        <label asp-for="Estado">
+                            Estado
+                        </label>
+
+                        <input asp-for="Estado"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-6">
+                        <label asp-for="Cidade">
+                            Cidade
+                        </label>
+
+                        <input asp-for="Cidade"
+                               class="edit-input" />
+                    </div>
+
+                    <div class="edit-field edit-col-6">
+                        <label>Situação do cadastro</label>
+
+                        <div class="client-active-box">
+                            <div class="client-active-check">
+
+                                <input asp-for="IsAtivo" />
+
+                                <label asp-for="IsAtivo">
+                                    Cliente ativo
+                                </label>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="client-edit-footer">
+
+                <a asp-controller="Clientes"
+                   asp-action="Index"
+                   class="edit-btn-secondary">
+                    Cancelar
+                </a>
+
+                <button type="submit"
+                        class="edit-btn-primary">
+                    Salvar Alterações
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

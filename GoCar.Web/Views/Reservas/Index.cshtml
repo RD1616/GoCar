@@ -1,0 +1,1522 @@
+﻿@model List<GoCar.Web.Models.ReservaViewModel>
+
+@{
+    var modoAdministrador =
+        ViewBag.ModoAdministrador != null
+        && (bool)ViewBag.ModoAdministrador;
+
+    var reservasComEntradaPaga =
+        ViewBag.ReservasComEntradaPaga as HashSet<int>
+        ?? new HashSet<int>();
+
+    var reservasComSaldoPago =
+        ViewBag.ReservasComSaldoPago as HashSet<int>
+        ?? new HashSet<int>();
+
+    var valorSaldoPagoPorReserva =
+        ViewBag.ValorSaldoPagoPorReserva as Dictionary<int, decimal>
+        ?? new Dictionary<int, decimal>();
+
+    ViewData["Title"] =
+        modoAdministrador
+            ? "Reservas"
+            : "Minhas Reservas";
+
+    var totalReservas = Model.Count;
+
+    var pendentes =
+        Model.Count(r =>
+            r.Status == 1 &&
+            r.IsAtiva);
+
+    var confirmadas =
+        Model.Count(r =>
+            r.Status == 2 &&
+            r.IsAtiva);
+
+    var concluidas =
+        Model.Count(r =>
+            r.Status == 5);
+
+    var canceladas =
+        Model.Count(r =>
+            r.Status == 3);
+
+    string NomeStatus(int status)
+    {
+        return status switch
+        {
+            1 => "Pendente",
+            2 => "Confirmada",
+            3 => "Cancelada",
+            4 => "Expirada",
+            5 => "Concluída",
+            _ => $"Status {status}"
+        };
+    }
+
+    string ClasseStatus(int status)
+    {
+        return status switch
+        {
+            1 => "reservation-status-pending",
+            2 => "reservation-status-confirmed",
+            3 => "reservation-status-cancelled",
+            4 => "reservation-status-expired",
+            5 => "reservation-status-finished",
+            _ => "reservation-status-expired"
+        };
+    }
+}
+
+<style>
+
+    .reservations-page {
+        max-width: 1600px;
+        margin: auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    .reservations-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .reservations-eyebrow {
+        margin-bottom: 4px;
+        color: #8d849a;
+        font-size: .90rem;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .reservations-title {
+        margin: 0;
+        font-size: 1.85rem;
+        font-weight: 800;
+    }
+
+    .reservations-description {
+        margin: 6px 0 0;
+        color: #81778e;
+        font-size: .96rem;
+    }
+
+    .reservations-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+    .reservation-primary-btn,
+    .reservation-secondary-btn {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: .90rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+    .reservation-primary-btn {
+        border: 1px solid #8b3dff;
+        background: linear-gradient(135deg, #7c2cff, #9b4dff);
+        color: #fff;
+        box-shadow: 0 8px 25px rgba(126,44,255,.18);
+    }
+
+        .reservation-primary-btn:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+    .reservation-secondary-btn {
+        border: 1px solid rgba(151,71,255,.24);
+        background: rgba(126,44,255,.06);
+        color: #bca9d4;
+    }
+
+        .reservation-secondary-btn:hover {
+            color: #fff;
+            background: rgba(126,44,255,.12);
+            border-color: rgba(151,71,255,.45);
+        }
+
+    .reservations-summary {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 13px;
+        margin-bottom: 18px;
+    }
+
+    .reservation-summary-card {
+        position: relative;
+        overflow: hidden;
+        padding: 16px 17px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 10px;
+        background: linear-gradient( 145deg, rgba(24,13,41,.96), rgba(14,8,25,.96) );
+    }
+
+        .reservation-summary-card::after {
+            content: "";
+            position: absolute;
+            width: 75px;
+            height: 75px;
+            right: -35px;
+            top: -35px;
+            border-radius: 50%;
+            background: rgba(139,51,255,.07);
+        }
+
+    .reservation-summary-label {
+        color: #81778d;
+        font-size: .86rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .reservation-summary-value {
+        margin-top: 5px;
+        color: #fff;
+        font-size: 1.4rem;
+        font-weight: 800;
+    }
+
+    .reservations-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 10px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.97), rgba(13,7,24,.97) );
+    }
+
+    .reservations-search {
+        width: min(430px, 100%);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 13px;
+        border: 1px solid rgba(151,71,255,.18);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+    }
+
+        .reservations-search input {
+            width: 100%;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: #fff;
+            font-size: .92rem;
+        }
+
+            .reservations-search input::placeholder {
+                color: #665d72;
+            }
+
+    .reservations-filter {
+        padding: 9px 12px;
+        border: 1px solid rgba(151,71,255,.18);
+        border-radius: 8px;
+        outline: 0;
+        background: #130b20;
+        color: #aaa1b7;
+        font-size: .90rem;
+    }
+
+    .reservations-count {
+        color: #71677d;
+        font-size: .86rem;
+    }
+
+        .reservations-count strong {
+            color: #c2b7cf;
+        }
+
+    .reservations-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    .reservation-card {
+        overflow: hidden;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+        transition: .18s ease;
+    }
+
+        .reservation-card:hover {
+            border-color: rgba(151,71,255,.30);
+            transform: translateY(-1px);
+        }
+
+    .reservation-card-header {
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 14px 17px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+    .reservation-number small {
+        display: block;
+        margin-bottom: 2px;
+        color: #756b80;
+        font-size: .84rem;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .reservation-number strong {
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    .reservation-badges {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .reservation-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 700;
+    }
+
+        .reservation-status::before {
+            content: "";
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+    .reservation-status-pending {
+        color: #fbbf24;
+        background: rgba(245,158,11,.13);
+    }
+
+    .reservation-status-confirmed {
+        color: #3ce78c;
+        background: rgba(26,192,103,.12);
+    }
+
+    .reservation-status-cancelled {
+        color: #ff718d;
+        background: rgba(244,63,94,.13);
+    }
+
+    .reservation-status-expired {
+        color: #94a3b8;
+        background: rgba(148,163,184,.11);
+    }
+
+    .reservation-status-finished {
+        color: #7ab8ff;
+        background: rgba(59,130,246,.13);
+    }
+
+    .reservation-paid {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        color: #3ce78c;
+        background: rgba(26,192,103,.10);
+        font-size: .82rem;
+        font-weight: 700;
+    }
+
+    .reservation-notice {
+        margin: 14px 16px 0;
+        padding: 11px 13px;
+        border-radius: 8px;
+        font-size: .86rem;
+        line-height: 1.5;
+    }
+
+        .reservation-notice strong {
+            display: block;
+            margin-bottom: 2px;
+            font-size: .88rem;
+        }
+
+    .reservation-notice-warning {
+        color: #e9c65e;
+        border: 1px solid rgba(245,158,11,.18);
+        background: rgba(245,158,11,.07);
+    }
+
+    .reservation-notice-info {
+        color: #9bc5ff;
+        border: 1px solid rgba(59,130,246,.17);
+        background: rgba(59,130,246,.07);
+    }
+
+    .reservation-notice-success {
+        color: #65df9d;
+        border: 1px solid rgba(34,197,94,.18);
+        background: rgba(34,197,94,.07);
+    }
+
+    .reservation-body {
+        padding: 17px;
+    }
+
+    .reservation-main-info {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 14px;
+    }
+
+    .reservation-info {
+        min-width: 0;
+    }
+
+    .reservation-info-label {
+        margin-bottom: 3px;
+        color: #706677;
+        font-size: .82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+    }
+
+    .reservation-info-value {
+        color: #d7d1df;
+        font-size: .88rem;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .reservation-info-sub {
+        margin-top: 2px;
+        color: #655c70;
+        font-size: .82rem;
+    }
+
+    .reservation-dates {
+        display: grid;
+        grid-template-columns: 1fr 40px 1fr;
+        align-items: center;
+        gap: 10px;
+        margin: 17px 0;
+        padding: 13px;
+        border: 1px solid rgba(151,71,255,.10);
+        border-radius: 8px;
+        background: rgba(255,255,255,.015);
+    }
+
+    .reservation-date-title {
+        color: #756b80;
+        font-size: .82rem;
+        text-transform: uppercase;
+    }
+
+    .reservation-date-value {
+        margin-top: 3px;
+        color: #e2dce9;
+        font-size: .88rem;
+        font-weight: 700;
+    }
+
+    .reservation-date-arrow {
+        color: #8640d9;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    .reservation-finance {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 17px;
+    }
+
+    .reservation-money {
+        padding: 10px 11px;
+        border-radius: 8px;
+        background: rgba(255,255,255,.02);
+        border: 1px solid rgba(255,255,255,.04);
+    }
+
+    .reservation-money-label {
+        color: #706677;
+        font-size: .82rem;
+        text-transform: uppercase;
+    }
+
+    .reservation-money-value {
+        margin-top: 3px;
+        color: #fff;
+        font-size: .94rem;
+        font-weight: 800;
+    }
+
+    .reservation-money-status {
+        margin-top: 2px;
+        font-size: .82rem;
+    }
+
+    .money-paid {
+        color: #3ce78c;
+    }
+
+    .money-pending {
+        color: #fbbf24;
+    }
+
+    .money-muted {
+        color: #71677d;
+    }
+
+    .reservation-footer {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+        padding: 13px 17px;
+        border-top: 1px solid rgba(255,255,255,.045);
+        background: rgba(0,0,0,.07);
+    }
+
+    .reservation-action {
+        min-height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 11px;
+        border-radius: 7px;
+        text-decoration: none;
+        font-size: .86rem;
+        font-weight: 700;
+        transition: .15s ease;
+    }
+
+    .reservation-action-view {
+        color: #bbb1c6;
+        border: 1px solid rgba(151,71,255,.18);
+        background: rgba(255,255,255,.025);
+    }
+
+        .reservation-action-view:hover {
+            color: #fff;
+            background: rgba(126,44,255,.10);
+        }
+
+    .reservation-action-start {
+        color: #fff;
+        border: 1px solid #7333d1;
+        background: linear-gradient(135deg,#7028e4,#9747ff);
+    }
+
+        .reservation-action-start:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+    .reservation-action-pay {
+        color: #1c1300;
+        border: 1px solid #fbbf24;
+        background: #fbbf24;
+    }
+
+        .reservation-action-pay:hover {
+            color: #000;
+        }
+
+    .reservations-empty {
+        padding: 60px 25px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.97), rgba(13,7,24,.97) );
+        text-align: center;
+    }
+
+    .reservations-empty-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 13px;
+        border-radius: 50%;
+        color: #a855f7;
+        background: rgba(139,51,255,.12);
+        font-size: 1.2rem;
+    }
+
+    .reservations-empty h3 {
+        margin-bottom: 7px;
+        font-size: 1rem;
+    }
+
+    .reservations-empty p {
+        color: #746b7e;
+        font-size: .88rem;
+    }
+
+    .reservation-hidden {
+        display: none !important;
+    }
+
+    @@media (max-width: 1150px) {
+
+        .reservations-summary {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .reservations-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 700px) {
+
+        .reservations-page {
+            padding: 20px 15px;
+        }
+
+        .reservations-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .reservations-summary {
+            grid-template-columns: repeat(2,1fr);
+        }
+
+        .reservations-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .reservations-search {
+            width: 100%;
+        }
+
+        .reservation-main-info,
+        .reservation-finance {
+            grid-template-columns: 1fr;
+        }
+    }
+
+</style>
+
+
+<div class="reservations-page">
+
+    <div class="reservations-header">
+
+        <div>
+
+            <div class="reservations-eyebrow">
+                @(modoAdministrador
+                    ? "Gerenciamento de reservas"
+                    : "Área do cliente")
+            </div>
+
+            <h1 class="reservations-title">
+                @(modoAdministrador
+                    ? "Reservas"
+                    : "Minhas Reservas")
+            </h1>
+
+            <p class="reservations-description">
+
+                @(modoAdministrador
+                    ? "Acompanhe pagamentos, reservas e veículos prontos para retirada."
+                    : "Acompanhe suas reservas, pagamentos e retiradas.")
+
+            </p>
+
+        </div>
+
+
+        <div class="reservations-header-actions">
+
+            @if (modoAdministrador)
+            {
+                <a asp-controller="Reservas"
+                   asp-action="Criar"
+                   class="reservation-primary-btn">
+
+                    + Nova Reserva
+
+                </a>
+
+                <a asp-controller="Dashboard"
+                   asp-action="Index"
+                   class="reservation-secondary-btn">
+
+                    ← Dashboard
+
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="reservation-secondary-btn">
+
+                    Escolher outro veículo
+
+                </a>
+            }
+
+        </div>
+
+    </div>
+
+
+    @if (TempData["Sucesso"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Sucesso"]
+        </div>
+    }
+
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Erro"]
+        </div>
+    }
+
+    @if (ViewBag.MensagemErro != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.MensagemErro
+        </div>
+    }
+
+
+    @if (Model.Count > 0)
+    {
+        <div class="reservations-summary">
+
+            <div class="reservation-summary-card">
+                <div class="reservation-summary-label">
+                    Total
+                </div>
+                <div class="reservation-summary-value">
+                    @totalReservas
+                </div>
+            </div>
+
+            <div class="reservation-summary-card">
+                <div class="reservation-summary-label">
+                    Pendentes
+                </div>
+                <div class="reservation-summary-value">
+                    @pendentes
+                </div>
+            </div>
+
+            <div class="reservation-summary-card">
+                <div class="reservation-summary-label">
+                    Confirmadas
+                </div>
+                <div class="reservation-summary-value">
+                    @confirmadas
+                </div>
+            </div>
+
+            <div class="reservation-summary-card">
+                <div class="reservation-summary-label">
+                    Concluídas
+                </div>
+                <div class="reservation-summary-value">
+                    @concluidas
+                </div>
+            </div>
+
+            <div class="reservation-summary-card">
+                <div class="reservation-summary-label">
+                    Canceladas
+                </div>
+                <div class="reservation-summary-value">
+                    @canceladas
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="reservations-toolbar">
+
+            <div class="reservations-search">
+
+                <span>⌕</span>
+
+                <input type="text"
+                       id="reservationSearch"
+                       placeholder="Buscar por reserva, cliente, veículo ou placa..." />
+
+            </div>
+
+
+            <div class="d-flex gap-3 align-items-center">
+
+                <span class="reservations-count">
+
+                    <strong id="reservationCount">
+                        @Model.Count
+                    </strong>
+
+                    reservas
+
+                </span>
+
+
+                <select id="reservationStatusFilter"
+                        class="reservations-filter">
+
+                    <option value="">
+                        Todos os status
+                    </option>
+
+                    <option value="Pendente">
+                        Pendentes
+                    </option>
+
+                    <option value="Confirmada">
+                        Confirmadas
+                    </option>
+
+                    <option value="Cancelada">
+                        Canceladas
+                    </option>
+
+                    <option value="Expirada">
+                        Expiradas
+                    </option>
+
+                    <option value="Concluída">
+                        Concluídas
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="reservations-grid">
+
+            @foreach (var reserva in Model)
+            {
+                var entradaPaga =
+                    reservasComEntradaPaga.Contains(
+                        reserva.Id);
+
+                var saldoPago =
+                    reservasComSaldoPago.Contains(
+                        reserva.Id);
+
+                var valorSaldoPago =
+                    valorSaldoPagoPorReserva.ContainsKey(
+                        reserva.Id)
+                        ? valorSaldoPagoPorReserva[
+                            reserva.Id]
+                        : 0m;
+
+                var aguardandoEntrada =
+                    reserva.Status == 1 &&
+                    reserva.IsAtiva &&
+                    !entradaPaga;
+
+                var reservaConfirmada =
+                    reserva.Status == 2 &&
+                    reserva.IsAtiva &&
+                    entradaPaga;
+
+                var retiradaLiberada =
+                    reservaConfirmada &&
+                    DateTime.Now >=
+                    reserva.DataRetirada;
+
+                var retiradaAgendada =
+                    reservaConfirmada &&
+                    DateTime.Now <
+                    reserva.DataRetirada;
+
+                var valorEntrada =
+                    Math.Round(
+                        reserva.ValorPrevisto * 0.30m,
+                        2,
+                        MidpointRounding.AwayFromZero);
+
+                var saldoRestante =
+                    Math.Round(
+                        reserva.ValorPrevisto -
+                        valorEntrada,
+                        2,
+                        MidpointRounding.AwayFromZero);
+
+                var statusNome =
+                    NomeStatus(reserva.Status);
+
+                var pesquisa =
+                    $"{reserva.Id} " +
+                    $"{reserva.ClienteNome} " +
+                    $"{reserva.VeiculoNome} " +
+                    $"{reserva.VeiculoPlaca}";
+
+
+                <article class="reservation-card reservation-item"
+                         data-status="@statusNome"
+                         data-search="@pesquisa.ToLowerInvariant()">
+
+
+                    <div class="reservation-card-header">
+
+                        <div class="reservation-number">
+
+                            <small>
+                                Reserva
+                            </small>
+
+                            <strong>
+                                #@reserva.Id
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reservation-badges">
+
+                            <span class="
+                                reservation-status
+                                @ClasseStatus(reserva.Status)">
+
+                                @statusNome
+
+                            </span>
+
+
+                            @if (entradaPaga)
+                            {
+                                <span class="reservation-paid">
+                                    ✓ Entrada paga
+                                </span>
+                            }
+
+                            @if (saldoPago)
+                            {
+                                <span class="reservation-paid">
+                                    ✓ Quitada
+                                </span>
+                            }
+
+                        </div>
+
+                    </div>
+
+
+                    @if (aguardandoEntrada)
+                    {
+                        <div class="
+                            reservation-notice
+                            reservation-notice-warning">
+
+                            <strong>
+                                Aguardando pagamento
+                            </strong>
+
+                            @if (modoAdministrador)
+                            {
+                                <span>
+                                    O cliente ainda precisa pagar
+                                    a entrada de 30% para confirmar
+                                    esta reserva.
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    Pague a entrada de 30% para
+                                    confirmar sua reserva.
+                                </span>
+                            }
+
+                        </div>
+                    }
+
+
+                    @if (retiradaAgendada)
+                    {
+                        <div class="
+                            reservation-notice
+                            reservation-notice-info">
+
+                            <strong>
+                                Retirada agendada
+                            </strong>
+
+                            @if (modoAdministrador)
+                            {
+                                <span>
+                                    Entrada paga. A locação poderá
+                                    ser iniciada em
+                                    @reserva.DataRetirada.ToString(
+                                        "dd/MM/yyyy 'às' HH:mm").
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    Reserva confirmada. Retirada
+                                    agendada para
+                                    @reserva.DataRetirada.ToString(
+                                        "dd/MM/yyyy 'às' HH:mm").
+                                </span>
+                            }
+
+                        </div>
+                    }
+
+
+                    @if (retiradaLiberada)
+                    {
+                        <div class="
+                            reservation-notice
+                            reservation-notice-success">
+
+                            <strong>
+                                ✓ Pronta para retirada
+                            </strong>
+
+                            @if (modoAdministrador)
+                            {
+                                <span>
+                                    Entrada paga. O veículo já pode
+                                    ter a locação iniciada.
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    Sua reserva está confirmada e
+                                    o veículo já está disponível
+                                    para retirada.
+                                </span>
+                            }
+
+                        </div>
+                    }
+
+
+                    <div class="reservation-body">
+
+                        <div class="reservation-main-info">
+
+                            @if (modoAdministrador)
+                            {
+                                <div class="reservation-info">
+
+                                    <div class="reservation-info-label">
+                                        Cliente
+                                    </div>
+
+                                    <div class="reservation-info-value">
+
+                                        @(string.IsNullOrWhiteSpace(
+                                            reserva.ClienteNome)
+                                            ? $"Cliente #{reserva.ClienteId}"
+                                            : reserva.ClienteNome)
+
+                                    </div>
+
+                                    <div class="reservation-info-sub">
+                                        Código #@reserva.ClienteId
+                                    </div>
+
+                                </div>
+                            }
+
+
+                            <div class="reservation-info">
+
+                                <div class="reservation-info-label">
+                                    Veículo
+                                </div>
+
+                                <div class="reservation-info-value">
+
+                                    @(string.IsNullOrWhiteSpace(
+                                        reserva.VeiculoNome)
+                                        ? $"Veículo #{reserva.VeiculoId}"
+                                        : reserva.VeiculoNome)
+
+                                </div>
+
+                                <div class="reservation-info-sub">
+
+                                    @if (!string.IsNullOrWhiteSpace(
+                                        reserva.VeiculoPlaca))
+                                    {
+                                        <span>
+                                            Placa @reserva.VeiculoPlaca
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>
+                                            Código #@reserva.VeiculoId
+                                        </span>
+                                    }
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="reservation-info">
+
+                                <div class="reservation-info-label">
+                                    Filial de retirada
+                                </div>
+
+                                <div class="reservation-info-value">
+
+                                    @(string.IsNullOrWhiteSpace(
+                                        reserva.FilialRetiradaNome)
+                                        ? $"Filial #{reserva.FilialRetiradaId}"
+                                        : reserva.FilialRetiradaNome)
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="reservation-info">
+
+                                <div class="reservation-info-label">
+                                    Filial de devolução
+                                </div>
+
+                                <div class="reservation-info-value">
+
+                                    @(string.IsNullOrWhiteSpace(
+                                        reserva.FilialDevolucaoNome)
+                                        ? $"Filial #{reserva.FilialDevolucaoId}"
+                                        : reserva.FilialDevolucaoNome)
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="reservation-dates">
+
+                            <div>
+
+                                <div class="reservation-date-title">
+                                    Retirada
+                                </div>
+
+                                <div class="reservation-date-value">
+
+                                    @reserva.DataRetirada.ToString(
+                                        "dd/MM/yyyy HH:mm")
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="reservation-date-arrow">
+                                →
+                            </div>
+
+
+                            <div>
+
+                                <div class="reservation-date-title">
+                                    Devolução
+                                </div>
+
+                                <div class="reservation-date-value">
+
+                                    @reserva.DataDevolucaoPrevista.ToString(
+                                        "dd/MM/yyyy HH:mm")
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="reservation-finance">
+
+                            <div class="reservation-money">
+
+                                <div class="reservation-money-label">
+                                    Total
+                                </div>
+
+                                <div class="reservation-money-value">
+                                    @reserva.ValorPrevisto.ToString("C")
+                                </div>
+
+                                <div class="
+                                    reservation-money-status
+                                    money-muted">
+
+                                    Valor da reserva
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="reservation-money">
+
+                                <div class="reservation-money-label">
+                                    Entrada 30%
+                                </div>
+
+                                <div class="reservation-money-value">
+                                    @valorEntrada.ToString("C")
+                                </div>
+
+                                @if (entradaPaga)
+                                {
+                                    <div class="
+                                        reservation-money-status
+                                        money-paid">
+
+                                        ✓ Pago
+
+                                    </div>
+                                }
+                                else if (
+                                    reserva.Status == 1 &&
+                                    reserva.IsAtiva)
+                                {
+                                    <div class="
+                                        reservation-money-status
+                                        money-pending">
+
+                                        Aguardando
+
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="
+                                        reservation-money-status
+                                        money-muted">
+
+                                        —
+
+                                    </div>
+                                }
+
+                            </div>
+
+
+                            <div class="reservation-money">
+
+                                <div class="reservation-money-label">
+                                    Saldo
+                                </div>
+
+                                @if (saldoPago)
+                                {
+                                    <div class="reservation-money-value">
+                                        R$ 0,00
+                                    </div>
+
+                                    <div class="
+                                        reservation-money-status
+                                        money-paid">
+
+                                        ✓ Quitado
+
+                                    </div>
+
+                                    <div class="
+                                        reservation-money-status
+                                        money-muted">
+
+                                        Pago:
+                                        @valorSaldoPago.ToString("C")
+
+                                    </div>
+                                }
+                                else if (entradaPaga)
+                                {
+                                    <div class="reservation-money-value">
+                                        @saldoRestante.ToString("C")
+                                    </div>
+
+                                    <div class="
+                                        reservation-money-status
+                                        money-muted">
+
+                                        A pagar
+
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="reservation-money-value">
+                                        —
+                                    </div>
+
+                                    <div class="
+                                        reservation-money-status
+                                        money-muted">
+
+                                        Aguardando entrada
+
+                                    </div>
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="reservation-footer">
+
+                        <a asp-controller="Reservas"
+                           asp-action="Detalhes"
+                           asp-route-id="@reserva.Id"
+                           class="
+                            reservation-action
+                            reservation-action-view">
+
+                            Visualizar
+
+                        </a>
+
+
+                        @if (modoAdministrador &&
+                             retiradaLiberada)
+                        {
+                            <a asp-controller="Reservas"
+                               asp-action="Detalhes"
+                               asp-route-id="@reserva.Id"
+                               class="
+                                reservation-action
+                                reservation-action-start">
+
+                                Iniciar locação
+
+                            </a>
+                        }
+
+
+                        @if (!modoAdministrador &&
+                             aguardandoEntrada)
+                        {
+                            <a asp-controller="Reservas"
+                               asp-action="Detalhes"
+                               asp-route-id="@reserva.Id"
+                               class="
+                                reservation-action
+                                reservation-action-pay">
+
+                                Pagar entrada
+
+                            </a>
+                        }
+
+                    </div>
+
+                </article>
+            }
+
+        </div>
+    }
+    else
+    {
+        <div class="reservations-empty">
+
+            <div class="reservations-empty-icon">
+                ▣
+            </div>
+
+            <h3>
+                Nenhuma reserva encontrada
+            </h3>
+
+            @if (modoAdministrador)
+            {
+                <p>
+                    Não existem reservas cadastradas
+                    no momento.
+                </p>
+
+                <a asp-controller="Reservas"
+                   asp-action="Criar"
+                   class="reservation-primary-btn">
+
+                    + Criar primeira reserva
+
+                </a>
+            }
+            else
+            {
+                <p>
+                    Você ainda não possui reservas
+                    cadastradas.
+                </p>
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="reservation-primary-btn">
+
+                    Escolher um veículo
+
+                </a>
+            }
+
+        </div>
+    }
+
+</div>
+
+
+@section Scripts {
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function() {
+
+                const search =
+                    document.getElementById(
+                        "reservationSearch"
+                    );
+
+                const statusFilter =
+                    document.getElementById(
+                        "reservationStatusFilter"
+                    );
+
+                const count =
+                    document.getElementById(
+                        "reservationCount"
+                    );
+
+                const items =
+                    document.querySelectorAll(
+                        ".reservation-item"
+                    );
+
+
+                function filtrarReservas() {
+
+                    const texto =
+                        (search?.value || "")
+                            .trim()
+                            .toLowerCase();
+
+                    const status =
+                        statusFilter?.value || "";
+
+                    let visiveis = 0;
+
+
+                    items.forEach(
+                        function(item) {
+
+                            const dados =
+                                item.dataset.search || "";
+
+                            const statusItem =
+                                item.dataset.status || "";
+
+
+                            const correspondeTexto =
+                                !texto ||
+                                dados.includes(texto);
+
+
+                            const correspondeStatus =
+                                !status ||
+                                statusItem === status;
+
+
+                            const mostrar =
+                                correspondeTexto &&
+                                correspondeStatus;
+
+
+                            item.classList.toggle(
+                                "reservation-hidden",
+                                !mostrar
+                            );
+
+
+                            if (mostrar) {
+                                visiveis++;
+                            }
+
+                        }
+                    );
+
+
+                    if (count) {
+                        count.textContent =
+                            visiveis;
+                    }
+
+                }
+
+
+                search?.addEventListener(
+                    "input",
+                    filtrarReservas
+                );
+
+
+                statusFilter?.addEventListener(
+                    "change",
+                    filtrarReservas
+                );
+
+            }
+        );
+
+    </script>
+
+}

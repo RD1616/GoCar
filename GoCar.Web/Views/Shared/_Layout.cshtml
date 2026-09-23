@@ -1,0 +1,1453 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - GoCar</title>
+
+    <script type="importmap"></script>
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/GoCar.Web.styles.css"
+          asp-append-version="true" />
+
+    <style>
+
+            /* =========================================================
+                       GO CAR - ÁREA ADMINISTRATIVA
+                    ========================================================= */
+
+            :root {
+                --gocar-purple: #9747ff;
+                --gocar-purple-light: #b86cff;
+                --gocar-purple-dark: #7028d9;
+                --admin-bg: #080511;
+                --admin-bg-secondary: #0d0818;
+                --admin-sidebar: #0e071a;
+                --admin-card: #120b1e;
+                --admin-border: rgba(255,255,255,.07);
+                --admin-text: #f8f7ff;
+                --admin-text-secondary: #a9a1b8;
+                --admin-text-muted: #6f667d;
+            }
+
+
+            /* =========================================================
+                       BODY ADMIN
+                    ========================================================= */
+
+            .admin-body {
+                margin: 0;
+                min-height: 100vh;
+                background: radial-gradient( circle at 85% 0%, rgba(112,42,255,.14), transparent 30% ), radial-gradient( circle at 15% 100%, rgba(112,42,255,.06), transparent 25% ), var(--admin-bg);
+                color: var(--admin-text);
+                font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            }
+
+
+            .admin-shell {
+                min-height: 100vh;
+                display: flex;
+            }
+
+
+            /* =========================================================
+                       SIDEBAR
+                    ========================================================= */
+
+            .admin-sidebar {
+                width: 255px;
+                min-width: 255px;
+                min-height: 100vh;
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                display: flex;
+                flex-direction: column;
+                background: linear-gradient( 180deg, #120820 0%, #0b0612 100% );
+                border-right: 1px solid rgba(151,71,255,.13);
+                z-index: 1050;
+                box-shadow: 10px 0 35px rgba(0,0,0,.12);
+            }
+
+
+            /* =========================================================
+                       LOGO
+                    ========================================================= */
+
+            .admin-brand {
+                height: 82px;
+                display: flex;
+                align-items: center;
+                padding: 0 25px;
+                text-decoration: none;
+                border-bottom: 1px solid var(--admin-border);
+                position: relative;
+            }
+
+
+                .admin-brand::after {
+                    content: "";
+                    position: absolute;
+                    left: 25px;
+                    bottom: -1px;
+                    width: 45px;
+                    height: 2px;
+                    background: linear-gradient( 90deg, var(--gocar-purple), transparent );
+                }
+
+
+            .admin-brand-logo {
+                color: #ffffff;
+                font-size: 1.7rem;
+                font-weight: 900;
+                font-style: italic;
+                letter-spacing: -1.8px;
+            }
+
+
+                .admin-brand-logo span {
+                    color: var(--gocar-purple);
+                }
+
+
+            .admin-brand-subtitle {
+                margin-left: 10px;
+                color: var(--admin-text-muted);
+                font-size: .63rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+
+            /* =========================================================
+                       MENU
+                    ========================================================= */
+
+            .admin-menu {
+                flex: 1;
+                padding: 24px 13px;
+                overflow-y: auto;
+            }
+
+
+                .admin-menu::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+
+                .admin-menu::-webkit-scrollbar-thumb {
+                    background: rgba(151,71,255,.25);
+                    border-radius: 10px;
+                }
+
+
+            .admin-menu-label {
+                padding: 0 14px;
+                margin: 7px 0 10px;
+                color: #665c78;
+                font-size: .64rem;
+                font-weight: 800;
+                letter-spacing: 1.4px;
+            }
+
+
+            .admin-nav-link {
+                min-height: 47px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 0 14px;
+                margin-bottom: 5px;
+                color: var(--admin-text-secondary);
+                text-decoration: none;
+                border: 1px solid transparent;
+                border-radius: 10px;
+                font-size: .88rem;
+                font-weight: 600;
+                position: relative;
+                transition: background .18s ease, color .18s ease, transform .18s ease, border-color .18s ease;
+            }
+
+
+                .admin-nav-link:hover {
+                    color: #ffffff;
+                    background: rgba(151,71,255,.09);
+                    border-color: rgba(151,71,255,.08);
+                    transform: translateX(2px);
+                }
+
+
+                .admin-nav-link.active {
+                    color: #ffffff;
+                    background: linear-gradient( 90deg, rgba(123,44,255,.27), rgba(123,44,255,.07) );
+                    border-color: rgba(151,71,255,.12);
+                    box-shadow: inset 3px 0 0 var(--gocar-purple);
+                }
+
+
+                    .admin-nav-link.active::after {
+                        content: "";
+                        position: absolute;
+                        right: 13px;
+                        width: 5px;
+                        height: 5px;
+                        border-radius: 50%;
+                        background: var(--gocar-purple-light);
+                        box-shadow: 0 0 10px rgba(151,71,255,.7);
+                    }
+
+
+            .admin-nav-icon {
+                width: 24px;
+                min-width: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #8d819e;
+                font-size: 1rem;
+                transition: color .18s ease;
+            }
+
+
+            .admin-nav-link:hover .admin-nav-icon,
+            .admin-nav-link.active .admin-nav-icon {
+                color: var(--gocar-purple-light);
+            }
+
+
+            /* =========================================================
+                       SIDEBAR FOOTER
+                    ========================================================= */
+
+            .admin-sidebar-footer {
+                margin: 0 13px;
+                padding: 16px 13px 20px;
+                border-top: 1px solid var(--admin-border);
+                color: var(--admin-text-muted);
+                font-size: .69rem;
+                line-height: 1.6;
+            }
+
+
+                .admin-sidebar-footer strong {
+                    color: #ffffff;
+                    font-size: .95rem;
+                    font-style: italic;
+                    letter-spacing: -.5px;
+                }
+
+
+            .admin-version {
+                display: inline-block;
+                margin-top: 5px;
+                padding: 3px 7px;
+                border: 1px solid rgba(255,255,255,.06);
+                border-radius: 5px;
+                color: #7d738a;
+                font-size: .61rem;
+                font-weight: 700;
+            }
+
+
+            /* =========================================================
+                       CONTEÚDO
+                    ========================================================= */
+
+            .admin-content {
+                width: calc(100% - 255px);
+                min-height: 100vh;
+                margin-left: 255px;
+            }
+
+
+            /* =========================================================
+                       TOPBAR
+                    ========================================================= */
+
+            .admin-topbar {
+                height: 82px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 30px;
+                position: sticky;
+                top: 0;
+                background: rgba(8,5,17,.88);
+                backdrop-filter: blur(18px);
+                -webkit-backdrop-filter: blur(18px);
+                border-bottom: 1px solid var(--admin-border);
+                z-index: 1020;
+            }
+
+
+            .admin-topbar-left {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+
+
+            /* =========================================================
+                       MENU MOBILE
+                    ========================================================= */
+
+            .admin-menu-toggle {
+                width: 40px;
+                height: 40px;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid rgba(255,255,255,.08);
+                border-radius: 9px;
+                background: #130b20;
+                color: #ffffff;
+                font-size: 1.15rem;
+                cursor: pointer;
+                transition: .18s ease;
+            }
+
+
+                .admin-menu-toggle:hover {
+                    border-color: rgba(151,71,255,.4);
+                    background: rgba(151,71,255,.12);
+                }
+
+
+            /* =========================================================
+                       BUSCA
+                    ========================================================= */
+
+            .admin-search {
+                width: min(450px, 38vw);
+                height: 42px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 0 14px;
+                border: 1px solid rgba(151,71,255,.12);
+                border-radius: 10px;
+                background: rgba(18,10,31,.72);
+                transition: border-color .18s ease, box-shadow .18s ease;
+            }
+
+
+                .admin-search:focus-within {
+                    border-color: rgba(151,71,255,.4);
+                    box-shadow: 0 0 0 3px rgba(151,71,255,.06);
+                }
+
+
+                .admin-search span {
+                    color: #766d85;
+                    font-size: 1rem;
+                }
+
+
+                .admin-search input {
+                    width: 100%;
+                    border: none;
+                    outline: none;
+                    background: transparent;
+                    color: #ffffff;
+                    font-size: .82rem;
+                }
+
+
+                    .admin-search input::placeholder {
+                        color: #6f6879;
+                    }
+
+
+            /* =========================================================
+                       USUÁRIO
+                    ========================================================= */
+
+            .admin-user {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+
+            .admin-avatar {
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                border: 2px solid rgba(255,255,255,.1);
+                border-radius: 50%;
+                background: linear-gradient( 135deg, #7028d9, #b96cff );
+                color: #ffffff;
+                font-size: .86rem;
+                font-weight: 800;
+                box-shadow: 0 5px 18px rgba(112,40,217,.25);
+            }
+
+
+            .admin-user-info {
+                line-height: 1.2;
+                min-width: 80px;
+            }
+
+
+            .admin-user-name {
+                color: #ffffff;
+                font-size: .82rem;
+                font-weight: 700;
+                white-space: nowrap;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+
+            .admin-user-profile {
+                margin-top: 4px;
+                color: #776e86;
+                font-size: .65rem;
+                font-weight: 600;
+            }
+
+
+            .admin-logout {
+                margin-left: 8px;
+                border: 1px solid rgba(255,255,255,.08);
+                border-radius: 8px;
+                background: #130b20;
+                color: #aaa1b9;
+                padding: 8px 13px;
+                font-size: .75rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: .18s ease;
+            }
+
+
+                .admin-logout:hover {
+                    color: #ffffff;
+                    border-color: rgba(151,71,255,.45);
+                    background: rgba(151,71,255,.1);
+                }
+
+
+            /* =========================================================
+                       MAIN
+                    ========================================================= */
+
+            .admin-main {
+                min-height: calc(100vh - 82px);
+                padding: 0;
+            }
+
+
+            /* =========================================================
+                       OVERLAY MOBILE
+                    ========================================================= */
+
+            .admin-sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,.62);
+                backdrop-filter: blur(2px);
+                z-index: 1040;
+            }
+
+
+                .admin-sidebar-overlay.active {
+                    display: block;
+                }
+
+
+            /* =========================================================
+                       RESPONSIVO - TABLET
+                    ========================================================= */
+
+            @@media (max-width: 1100px) {
+
+                .admin-sidebar {
+                    width: 235px;
+                    min-width: 235px;
+                }
+
+                .admin-content {
+                    width: calc(100% - 235px);
+                    margin-left: 235px;
+                }
+
+                .admin-search {
+                    width: min(350px, 35vw);
+                }
+
+                .admin-topbar {
+                    padding: 0 22px;
+                }
+            }
+
+
+            /* =========================================================
+                       RESPONSIVO - MOBILE
+                    ========================================================= */
+
+            @@media (max-width: 991px) {
+
+                .admin-sidebar {
+                    width: 255px;
+                    min-width: 255px;
+                    transform: translateX(-105%);
+                    transition: transform .24s ease;
+                    box-shadow: 15px 0 40px rgba(0,0,0,.35);
+                }
+
+
+                    .admin-sidebar.open {
+                        transform: translateX(0);
+                    }
+
+
+                .admin-content {
+                    width: 100%;
+                    margin-left: 0;
+                }
+
+
+                .admin-menu-toggle {
+                    display: flex;
+                }
+
+
+                .admin-search {
+                    width: min(400px, 48vw);
+                }
+            }
+
+
+            /* =========================================================
+                       RESPONSIVO - CELULAR
+                    ========================================================= */
+
+            @@media (max-width: 650px) {
+
+                .admin-topbar {
+                    height: 72px;
+                    padding: 0 15px;
+                }
+
+
+                .admin-main {
+                    min-height: calc(100vh - 72px);
+                }
+
+
+                .admin-search {
+                    display: none;
+                }
+
+
+                .admin-user-info {
+                    display: none;
+                }
+
+
+                .admin-user {
+                    gap: 7px;
+                }
+
+
+                .admin-avatar {
+                    width: 36px;
+                    height: 36px;
+                }
+
+
+                .admin-logout {
+                    margin-left: 4px;
+                    padding: 7px 10px;
+                }
+            }
+
+
+            /* =========================================================
+                       CELULAR PEQUENO
+                    ========================================================= */
+
+            @@media (max-width: 420px) {
+
+                .admin-sidebar {
+                    width: 280px;
+                    min-width: 280px;
+                }
+
+
+                .admin-logout {
+                    font-size: .7rem;
+                }
+            }
+
+    </style>
+</head>
+
+
+@{
+    var usuarioNome =
+        Context.Session.GetString("UsuarioNome");
+
+    var usuarioPerfil =
+        Context.Session.GetString("UsuarioPerfil");
+
+    var usuarioLogado =
+        !string.IsNullOrWhiteSpace(usuarioNome);
+
+    var ehFuncionario =
+        usuarioPerfil == "Administrador"
+        || usuarioPerfil == "Gerente"
+        || usuarioPerfil == "Atendente";
+
+    var ehCliente =
+        usuarioPerfil == "Cliente";
+
+    var controllerAtual =
+        ViewContext.RouteData.Values["controller"]
+            ?.ToString();
+
+    string MenuAtivo(string controller)
+    {
+        return string.Equals(
+            controllerAtual,
+            controller,
+            StringComparison.OrdinalIgnoreCase)
+                ? "active"
+                : "";
+    }
+
+    var inicialUsuario =
+        !string.IsNullOrWhiteSpace(usuarioNome)
+            ? usuarioNome.Substring(0, 1).ToUpper()
+            : "U";
+}
+
+
+<body class="@(usuarioLogado && ehFuncionario ? "admin-body" : "gocar-body")">
+
+
+    @if (usuarioLogado && ehFuncionario)
+    {
+
+        <!-- =========================================================
+         ÁREA ADMINISTRATIVA
+    ========================================================== -->
+
+        <div class="admin-shell">
+
+
+            <!-- =====================================================
+             SIDEBAR
+        ====================================================== -->
+
+            <aside class="admin-sidebar"
+                   id="adminSidebar">
+
+
+                <!-- LOGO -->
+
+                <a asp-controller="Dashboard"
+                   asp-action="Index"
+                   class="admin-brand">
+
+                    <div class="admin-brand-logo">
+                        GO<span>CAR</span>
+                    </div>
+
+                    <span class="admin-brand-subtitle">
+                        Admin
+                    </span>
+
+                </a>
+
+
+                <!-- MENU -->
+
+                <nav class="admin-menu">
+
+
+                    <div class="admin-menu-label">
+                        MENU PRINCIPAL
+                    </div>
+
+
+                    <a asp-controller="Dashboard"
+                       asp-action="Index"
+                       class="admin-nav-link @MenuAtivo("Dashboard")">
+
+                        <span class="admin-nav-icon">
+                            ◈
+                        </span>
+
+                        <span>
+                            Dashboard
+                        </span>
+
+                    </a>
+
+
+                    <a asp-controller="Veiculos"
+                       asp-action="Index"
+                       class="admin-nav-link @MenuAtivo("Veiculos")">
+
+                        <span class="admin-nav-icon">
+                            🚗
+                        </span>
+
+                        <span>
+                            Veículos
+                        </span>
+
+                    </a>
+
+
+                    <a asp-controller="Categorias"
+                       asp-action="Index"
+                       class="admin-nav-link @MenuAtivo("Categorias")">
+
+                        <span class="admin-nav-icon">
+                            ◇
+                        </span>
+
+                        <span>
+                            Categorias
+                        </span>
+
+                    </a>
+
+
+                    <a asp-controller="Clientes"
+                       asp-action="Index"
+                       class="admin-nav-link @MenuAtivo("Clientes")">
+
+                        <span class="admin-nav-icon">
+                            ♙
+                        </span>
+
+                        <span>
+                            Clientes
+                        </span>
+
+                    </a>
+
+
+                    <a asp-controller="Reservas"
+                       asp-action="Index"
+                       class="admin-nav-link @MenuAtivo("Reservas")">
+
+                        <span class="admin-nav-icon">
+                            ▣
+                        </span>
+
+                        <span>
+                            Reservas
+                        </span>
+
+                    </a>
+
+
+                    <a asp-controller="Locacoes"
+                       asp-action="Index"
+                       class="admin-nav-link @MenuAtivo("Locacoes")">
+
+                        <span class="admin-nav-icon">
+                            ▦
+                        </span>
+
+                        <span>
+                            Locações
+                        </span>
+
+                    </a>
+
+
+                    <a asp-controller="Pagamentos"
+                       asp-action="Index"
+                       class="admin-nav-link @MenuAtivo("Pagamentos")">
+
+                        <span class="admin-nav-icon">
+                            $
+                        </span>
+
+                        <span>
+                            Financeiro
+                        </span>
+
+                    </a>
+
+
+                    <a asp-controller="Filiais"
+                       asp-action="Index"
+                       class="admin-nav-link @MenuAtivo("Filiais")">
+
+                        <span class="admin-nav-icon">
+                            ⌂
+                        </span>
+
+                        <span>
+                            Filiais
+                        </span>
+
+                    </a>
+
+
+                    <div class="admin-menu-label"
+                         style="margin-top: 26px;">
+
+                        NAVEGAÇÃO
+
+                    </div>
+
+
+                    <a asp-controller="Home"
+                       asp-action="Index"
+                       class="admin-nav-link">
+
+                        <span class="admin-nav-icon">
+                            ↗
+                        </span>
+
+                        <span>
+                            Ver site
+                        </span>
+
+                    </a>
+
+
+                </nav>
+
+
+                <!-- FOOTER SIDEBAR -->
+
+                <div class="admin-sidebar-footer">
+
+                    <strong>
+                        GoCar
+                    </strong>
+
+                    <br />
+
+                    Sistema de Gerenciamento
+
+                    <br />
+
+                    <span class="admin-version">
+                        Versão 1.0.0
+                    </span>
+
+                </div>
+
+
+            </aside>
+
+
+            <!-- OVERLAY MOBILE -->
+
+            <div class="admin-sidebar-overlay"
+                 id="adminSidebarOverlay">
+            </div>
+
+
+            <!-- =====================================================
+             CONTEÚDO
+        ====================================================== -->
+
+            <div class="admin-content">
+
+
+                <!-- =================================================
+                 TOPBAR
+            ================================================== -->
+
+                <header class="admin-topbar">
+
+
+                    <div class="admin-topbar-left">
+
+
+                        <!-- MENU MOBILE -->
+
+                        <button type="button"
+                                class="admin-menu-toggle"
+                                id="adminMenuToggle"
+                                aria-label="Abrir menu"
+                                aria-expanded="false">
+
+                            ☰
+
+                        </button>
+
+
+                        <!-- BUSCA -->
+
+                        <div class="admin-search">
+
+                            <span>
+                                ⌕
+                            </span>
+
+                            <input type="text"
+                                   id="adminSearch"
+                                   placeholder="Buscar por veículo, cliente, reserva..."
+                                   autocomplete="off" />
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- USUÁRIO -->
+
+                    <div class="admin-user">
+
+
+                        <div class="admin-avatar"
+                             title="@usuarioNome">
+
+                            @inicialUsuario
+
+                        </div>
+
+
+                        <div class="admin-user-info">
+
+                            <div class="admin-user-name">
+                                @usuarioNome
+                            </div>
+
+                            <div class="admin-user-profile">
+                                @usuarioPerfil
+                            </div>
+
+                        </div>
+
+
+                        <form asp-controller="Account"
+                              asp-action="Logout"
+                              method="post"
+                              class="m-0">
+
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit"
+                                    class="admin-logout">
+
+                                Sair
+
+                            </button>
+
+                        </form>
+
+
+                    </div>
+
+
+                </header>
+
+
+                <!-- =================================================
+                 CONTEÚDO DAS PÁGINAS
+            ================================================== -->
+
+                <main role="main"
+                      class="admin-main">
+
+                    @RenderBody()
+
+                </main>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================================================
+         SCRIPTS ADMIN
+    ========================================================== -->
+
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script src="~/js/site.js"
+                asp-append-version="true">
+        </script>
+
+
+        <script>
+
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    function () {
+
+                        const sidebar =
+                            document.getElementById(
+                                "adminSidebar"
+                            );
+
+                        const toggle =
+                            document.getElementById(
+                                "adminMenuToggle"
+                            );
+
+                        const overlay =
+                            document.getElementById(
+                                "adminSidebarOverlay"
+                            );
+
+
+                        function abrirMenu() {
+
+                            if (!sidebar)
+                                return;
+
+                            sidebar.classList.add("open");
+
+                            if (overlay)
+                                overlay.classList.add("active");
+
+                            if (toggle)
+                                toggle.setAttribute(
+                                    "aria-expanded",
+                                    "true"
+                                );
+                        }
+
+
+                        function fecharMenu() {
+
+                            if (!sidebar)
+                                return;
+
+                            sidebar.classList.remove("open");
+
+                            if (overlay)
+                                overlay.classList.remove("active");
+
+                            if (toggle)
+                                toggle.setAttribute(
+                                    "aria-expanded",
+                                    "false"
+                                );
+                        }
+
+
+                        if (toggle) {
+
+                            toggle.addEventListener(
+                                "click",
+                                function () {
+
+                                    if (
+                                        sidebar &&
+                                        sidebar.classList.contains("open")
+                                    ) {
+
+                                        fecharMenu();
+
+                                    }
+                                    else {
+
+                                        abrirMenu();
+
+                                    }
+
+                                }
+                            );
+
+                        }
+
+
+                        if (overlay) {
+
+                            overlay.addEventListener(
+                                "click",
+                                fecharMenu
+                            );
+
+                        }
+
+
+                        document
+                            .querySelectorAll(".admin-nav-link")
+                            .forEach(function (link) {
+
+                                link.addEventListener(
+                                    "click",
+                                    function () {
+
+                                        if (
+                                            window.innerWidth <= 991
+                                        ) {
+
+                                            fecharMenu();
+
+                                        }
+
+                                    }
+                                );
+
+                            });
+
+
+                        window.addEventListener(
+                            "resize",
+                            function () {
+
+                                if (
+                                    window.innerWidth > 991
+                                ) {
+
+                                    fecharMenu();
+
+                                }
+
+                            }
+                        );
+
+                    }
+                );
+
+        </script>
+
+
+        @await RenderSectionAsync(
+            "Scripts",
+            required: false
+        )
+
+    }
+    else
+    {
+
+        <!-- =========================================================
+         SITE / ÁREA DO CLIENTE
+    ========================================================== -->
+
+        <header class="gocar-header">
+
+            <nav class="navbar navbar-expand-lg navbar-dark">
+
+                <div class="container">
+
+
+                    <!-- LOGO -->
+
+                    <a class="navbar-brand gocar-logo"
+                       asp-area=""
+                       asp-controller="Home"
+                       asp-action="Index">
+
+                        GoCar
+
+                    </a>
+
+
+                    <!-- MENU MOBILE -->
+
+                    <button class="navbar-toggler"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#gocarNavbar"
+                            aria-controls="gocarNavbar"
+                            aria-expanded="false"
+                            aria-label="Abrir menu">
+
+                        <span class="navbar-toggler-icon">
+                        </span>
+
+                    </button>
+
+
+                    <!-- NAVEGAÇÃO -->
+
+                    <div class="collapse navbar-collapse"
+                         id="gocarNavbar">
+
+
+                        <ul class="navbar-nav mx-auto">
+
+
+                            <li class="nav-item">
+
+                                <a class="nav-link gocar-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    Início
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a class="nav-link gocar-nav-link"
+                                   href="/#veiculos">
+
+                                    Veículos
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a class="nav-link gocar-nav-link"
+                                   href="/#como-funciona">
+
+                                    Como funciona
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a class="nav-link gocar-nav-link"
+                                   href="/#sobre">
+
+                                    Sobre
+
+                                </a>
+
+                            </li>
+
+
+                        </ul>
+
+
+                        <!-- ÁREA DO USUÁRIO -->
+
+                        <div class="d-flex align-items-center gap-3">
+
+
+                            @if (usuarioLogado)
+                            {
+
+                                <span class="text-white">
+                                    Olá, @usuarioNome
+                                </span>
+
+
+                                @if (ehCliente)
+                                {
+
+                                    <a class="gocar-btn-outline"
+                                       asp-controller="Reservas"
+                                       asp-action="Index">
+
+                                        Minhas Reservas
+
+                                    </a>
+
+                                }
+
+
+                                <form asp-controller="Account"
+                                      asp-action="Logout"
+                                      method="post"
+                                      class="m-0">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit"
+                                            class="btn gocar-login-btn">
+
+                                        Sair
+
+                                    </button>
+
+                                </form>
+
+                            }
+                            else
+                            {
+
+                                <a class="btn gocar-login-btn"
+                                   asp-controller="Account"
+                                   asp-action="Login">
+
+                                    Entrar
+
+                                </a>
+
+                            }
+
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </nav>
+
+        </header>
+
+
+        <!-- CONTEÚDO -->
+
+        <main role="main">
+
+            @RenderBody()
+
+        </main>
+
+
+        <!-- =========================================================
+         FOOTER
+    ========================================================== -->
+
+        <footer class="gocar-footer">
+
+            <div class="container">
+
+
+                <div class="row">
+
+
+                    <div class="col-md-4">
+
+                        <h5 class="gocar-footer-logo">
+                            GoCar
+                        </h5>
+
+                        <p>
+                            Sua jornada começa aqui.
+                            Alugue seu carro de forma simples,
+                            rápida e segura.
+                        </p>
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <h6>
+                            Navegação
+                        </h6>
+
+                        <ul class="list-unstyled">
+
+
+                            <li>
+
+                                <a asp-controller="Home"
+                                   asp-action="Index">
+
+                                    Início
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="/#veiculos">
+
+                                    Veículos
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="/#como-funciona">
+
+                                    Como funciona
+
+                                </a>
+
+                            </li>
+
+
+                        </ul>
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <h6>
+                            Contato
+                        </h6>
+
+                        <p>
+                            contato@gocar.com
+                        </p>
+
+                        <p>
+                            São Paulo - SP
+                        </p>
+
+                    </div>
+
+
+                </div>
+
+
+                <hr />
+
+
+                <div class="text-center gocar-copyright">
+
+                    © 2026 GoCar.
+                    Todos os direitos reservados.
+
+                </div>
+
+
+            </div>
+
+        </footer>
+
+
+        <!-- SCRIPTS -->
+
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script src="~/js/site.js"
+                asp-append-version="true">
+        </script>
+
+
+        @await RenderSectionAsync(
+            "Scripts",
+            required: false
+        )
+
+    }
+
+</body>
+</html>

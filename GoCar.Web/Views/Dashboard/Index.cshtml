@@ -1,0 +1,1352 @@
+﻿@model GoCar.Web.Models.DashboardViewModel
+
+@using GoCar.Web.Helpers
+
+@{
+    ViewData["Title"] = "Dashboard";
+
+    var usuarioNome =
+        Context.Session.GetString("UsuarioNome")
+        ?? "Administrador";
+
+    string StatusVeiculo(int status)
+    {
+        return status switch
+        {
+            1 => "Disponível",
+            2 => "Reservado",
+            3 => "Alugado",
+            4 => "Manutenção",
+            5 => "Inativo",
+            _ => "Desconhecido"
+        };
+    }
+
+    string ClasseStatus(int status)
+    {
+        return status switch
+        {
+            1 => "status-disponivel",
+            2 => "status-reservado",
+            3 => "status-alugado",
+            4 => "status-manutencao",
+            5 => "status-inativo",
+            _ => "status-inativo"
+        };
+    }
+
+    var totalOperacoesHoje =
+        Model.RetiradasHoje.Count +
+        Model.DevolucoesHoje.Count;
+}
+
+<style>
+
+    /* =========================================================
+           DASHBOARD
+        ========================================================= */
+
+    .gcd-dashboard {
+        width: 100%;
+        max-width: 1680px;
+        margin: 0 auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    /* =========================================================
+           CABEÇALHO
+        ========================================================= */
+
+    .gcd-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 25px;
+        margin-bottom: 28px;
+    }
+
+    .gcd-heading-left {
+        min-width: 0;
+    }
+
+    .gcd-welcome {
+        margin-bottom: 6px;
+        color: #c4b9d0;
+        font-size: 1rem;
+        font-weight: 650;
+    }
+
+    .gcd-heading h1 {
+        margin: 0;
+        color: #fff;
+        font-size: 2rem;
+        font-weight: 850;
+        letter-spacing: -.7px;
+    }
+
+    .gcd-heading p {
+        margin: 7px 0 0;
+        color: #aaa0b6;
+        font-size: .98rem;
+        line-height: 1.55;
+    }
+
+    .gcd-date-box {
+        min-width: 210px;
+        padding: 14px 17px;
+        border: 1px solid rgba(151, 71, 255, .18);
+        border-radius: 11px;
+        background: rgba(20, 10, 34, .65);
+        text-align: right;
+    }
+
+        .gcd-date-box strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #fff;
+            font-size: .94rem;
+        }
+
+        .gcd-date-box span {
+            color: #aaa0b6;
+            font-size: .84rem;
+        }
+
+    /* =========================================================
+           ALERTA
+        ========================================================= */
+
+    .gcd-alert {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        padding: 13px 16px;
+        border: 1px solid rgba(220, 53, 69, .22);
+        border-radius: 11px;
+        background: rgba(220, 53, 69, .08);
+        color: #ff9ca5;
+        font-size: .95rem;
+    }
+
+    /* =========================================================
+           MÉTRICAS
+        ========================================================= */
+
+    .gcd-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 15px;
+        margin-bottom: 18px;
+    }
+
+    .gcd-card {
+        position: relative;
+        min-height: 164px;
+        overflow: hidden;
+        padding: 20px;
+        border: 1px solid rgba(151, 71, 255, .16);
+        border-radius: 13px;
+        background: linear-gradient( 145deg, rgba(27, 14, 46, .98), rgba(14, 8, 26, .98) );
+        box-shadow: 0 8px 30px rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255,255,255,.025);
+        transition: .2s ease;
+    }
+
+        .gcd-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(151, 71, 255, .30);
+            box-shadow: 0 12px 35px rgba(0,0,0,.20), 0 0 0 1px rgba(151,71,255,.04);
+        }
+
+        .gcd-card::after {
+            content: "";
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            right: -55px;
+            top: -55px;
+            border-radius: 50%;
+            background: rgba(126, 44, 255, .08);
+            pointer-events: none;
+        }
+
+    .gcd-card-icon {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 13px;
+        border: 1px solid rgba(151, 71, 255, .15);
+        border-radius: 10px;
+        background: rgba(137, 48, 255, .13);
+        color: #b56cff;
+        font-size: 1.05rem;
+    }
+
+    .gcd-card-label {
+        color: #c8bfD1;
+        font-size: .94rem;
+        font-weight: 650;
+    }
+
+    .gcd-card-value {
+        margin-top: 5px;
+        color: #fff;
+        font-size: 1.7rem;
+        font-weight: 850;
+        letter-spacing: -.4px;
+    }
+
+    .gcd-card-footer {
+        margin-top: 8px;
+        color: #aaa0b5;
+        font-size: .88rem;
+        line-height: 1.4;
+    }
+
+    .gcd-green {
+        color: #35d989;
+        font-weight: 750;
+    }
+
+    /* =========================================================
+           PAINÉIS
+        ========================================================= */
+
+    .gcd-main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(290px, .75fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .gcd-panel {
+        overflow: hidden;
+        border: 1px solid rgba(151, 71, 255, .13);
+        border-radius: 13px;
+        background: linear-gradient( 145deg, rgba(22, 11, 38, .97), rgba(13, 7, 24, .98) );
+        box-shadow: 0 8px 30px rgba(0,0,0,.10);
+    }
+
+    .gcd-panel-header {
+        min-height: 67px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 0 20px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+    .gcd-panel-title {
+        color: #f4f1f7;
+        font-size: 1.02rem;
+        font-weight: 750;
+    }
+
+    .gcd-panel-subtitle {
+        margin-top: 4px;
+        color: #aaa0b5;
+        font-size: .86rem;
+    }
+
+    .gcd-link {
+        color: #c17cff;
+        text-decoration: none;
+        font-size: .9rem;
+        font-weight: 700;
+        white-space: nowrap;
+        transition: .18s ease;
+    }
+
+        .gcd-link:hover {
+            color: #fff;
+        }
+
+    /* =========================================================
+           RESUMO OPERACIONAL
+        ========================================================= */
+
+    .gcd-overview {
+        padding: 22px;
+    }
+
+    .gcd-overview-intro {
+        margin-bottom: 20px;
+        color: #aaa0b5;
+        font-size: .94rem;
+        line-height: 1.55;
+    }
+
+    .gcd-overview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 11px;
+    }
+
+    .gcd-overview-item {
+        padding: 17px;
+        border: 1px solid rgba(255,255,255,.055);
+        border-radius: 10px;
+        background: rgba(255,255,255,.018);
+    }
+
+    .gcd-overview-icon {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 11px;
+        border-radius: 8px;
+        background: rgba(151,71,255,.10);
+        color: #ae64ff;
+        font-size: 1.05rem;
+    }
+
+    .gcd-overview-label {
+        color: #b7adbf;
+        font-size: .9rem;
+        font-weight: 600;
+    }
+
+    .gcd-overview-value {
+        margin-top: 5px;
+        color: #fff;
+        font-size: 1.35rem;
+        font-weight: 800;
+    }
+
+    /* =========================================================
+           OPERAÇÃO DO DIA
+        ========================================================= */
+
+    .gcd-operation {
+        padding: 7px 18px 16px;
+    }
+
+    .gcd-operation-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 4px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+        .gcd-operation-item:last-child {
+            border-bottom: 0;
+        }
+
+    .gcd-operation-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9px;
+        background: rgba(139,51,255,.13);
+        color: #b56cff;
+        font-size: 1rem;
+    }
+
+    .gcd-operation-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+        .gcd-operation-info strong {
+            display: block;
+            overflow: hidden;
+            color: #f1edf4;
+            font-size: .94rem;
+            font-weight: 700;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .gcd-operation-info span {
+            display: block;
+            margin-top: 4px;
+            overflow: hidden;
+            color: #aaa0b5;
+            font-size: .85rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+    .gcd-operation-time {
+        color: #c17cff;
+        font-size: .9rem;
+        font-weight: 750;
+    }
+
+    .gcd-empty {
+        padding: 35px 15px;
+        color: #aaa0b5;
+        text-align: center;
+        font-size: .94rem;
+        line-height: 1.5;
+    }
+
+    .gcd-empty-icon {
+        margin-bottom: 8px;
+        color: #38d98c;
+        font-size: 1.5rem;
+    }
+
+    /* =========================================================
+           PARTE INFERIOR
+        ========================================================= */
+
+    .gcd-bottom-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2.15fr) minmax(245px, .85fr);
+        gap: 16px;
+    }
+
+    /* =========================================================
+           TABELA
+        ========================================================= */
+
+    .gcd-table-wrap {
+        overflow-x: auto;
+    }
+
+    .gcd-table {
+        width: 100%;
+        min-width: 700px;
+        border-collapse: collapse;
+    }
+
+        .gcd-table th {
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(255,255,255,.045);
+            background: rgba(255,255,255,.012);
+            color: #aaa0b5;
+            font-size: .82rem;
+            font-weight: 750;
+            text-align: left;
+            letter-spacing: .3px;
+        }
+
+        .gcd-table td {
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            color: #ddd7e3;
+            font-size: .92rem;
+            vertical-align: middle;
+        }
+
+        .gcd-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .gcd-table tbody tr {
+            transition: .16s ease;
+        }
+
+            .gcd-table tbody tr:hover {
+                background: rgba(126,44,255,.045);
+            }
+
+    .gcd-car {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .gcd-car-img {
+        width: 72px;
+        height: 44px;
+        object-fit: contain;
+        border-radius: 7px;
+        background: radial-gradient( circle, rgba(151,71,255,.09), transparent 70% );
+    }
+
+    .gcd-car-name {
+        color: #fff;
+        font-size: .98rem;
+        font-weight: 750;
+    }
+
+    .gcd-car-brand {
+        margin-top: 3px;
+        color: #aaa0b5;
+        font-size: .84rem;
+    }
+
+    .gcd-plate {
+        display: inline-block;
+        padding: 5px 8px;
+        border: 1px solid rgba(255,255,255,.10);
+        border-radius: 5px;
+        background: rgba(255,255,255,.025);
+        color: #f0ebf4;
+        font-family: monospace;
+        font-size: .88rem;
+        font-weight: 650;
+    }
+
+    /* =========================================================
+           STATUS
+        ========================================================= */
+
+    .gcd-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 750;
+    }
+
+        .gcd-status::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+    .status-disponivel {
+        color: #3ce78c;
+        background: rgba(26,192,103,.11);
+    }
+
+    .status-reservado {
+        color: #c084fc;
+        background: rgba(168,85,247,.12);
+    }
+
+    .status-alugado {
+        color: #ff7196;
+        background: rgba(244,63,94,.11);
+    }
+
+    .status-manutencao {
+        color: #fbbf24;
+        background: rgba(245,158,11,.11);
+    }
+
+    .status-inativo {
+        color: #cbd5e1;
+        background: rgba(148,163,184,.10);
+    }
+
+    .gcd-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid rgba(151,71,255,.30);
+        border-radius: 7px;
+        background: rgba(151,71,255,.16);
+        color: #fff !important;
+        text-decoration: none;
+        font-size: 1rem;
+        font-weight: 800;
+        transition: .18s ease;
+    }
+
+        .gcd-action:visited,
+        .gcd-action:focus,
+        .gcd-action:active {
+            color: #fff !important;
+        }
+
+        .gcd-action:hover {
+            border-color: rgba(192,132,252,.65);
+            background: rgba(151,71,255,.30);
+            color: #fff !important;
+            transform: translateY(-1px);
+        }
+
+    /* =========================================================
+           ATALHOS
+        ========================================================= */
+
+    .gcd-shortcuts {
+        padding: 15px;
+    }
+
+    .gcd-shortcut {
+        min-height: 61px;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 11px 12px;
+        margin-bottom: 10px;
+        border: 1px solid rgba(151,71,255,.10);
+        border-radius: 9px;
+        background: rgba(255,255,255,.014);
+        color: #ded7e5;
+        text-decoration: none;
+        font-size: .95rem;
+        font-weight: 650;
+        transition: .18s ease;
+    }
+
+        .gcd-shortcut:last-child {
+            margin-bottom: 0;
+        }
+
+        .gcd-shortcut:hover {
+            border-color: rgba(151,71,255,.32);
+            background: rgba(126,44,255,.07);
+            color: #fff;
+            transform: translateX(2px);
+        }
+
+    .gcd-shortcut-icon {
+        width: 39px;
+        height: 39px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: rgba(139,51,255,.12);
+        color: #b56cff;
+        font-size: 1.05rem;
+    }
+
+    .gcd-shortcut-text {
+        flex: 1;
+    }
+
+    .gcd-shortcut-arrow {
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 750;
+        transition: .18s ease;
+    }
+
+    .gcd-shortcut:hover .gcd-shortcut-arrow {
+        color: #fff;
+        transform: translateX(2px);
+    }
+
+    /* =========================================================
+           RESPONSIVO
+        ========================================================= */
+
+    @@media (max-width: 1150px) {
+
+        .gcd-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .gcd-main-grid,
+        .gcd-bottom-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 700px) {
+
+        .gcd-dashboard {
+            padding: 20px 15px;
+        }
+
+        .gcd-heading {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .gcd-date-box {
+            width: 100%;
+            text-align: left;
+        }
+
+        .gcd-metrics {
+            grid-template-columns: 1fr;
+        }
+
+        .gcd-overview-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 480px) {
+
+        .gcd-dashboard {
+            padding: 16px 11px;
+        }
+
+        .gcd-heading h1 {
+            font-size: 1.7rem;
+        }
+
+        .gcd-card {
+            min-height: 150px;
+        }
+    }
+
+</style>
+
+
+<div class="gcd-dashboard">
+
+    <!-- =====================================================
+         CABEÇALHO
+    ====================================================== -->
+
+    <div class="gcd-heading">
+
+        <div class="gcd-heading-left">
+
+            <div class="gcd-welcome">
+                Bem-vindo(a), @usuarioNome
+            </div>
+
+            <h1>
+                Dashboard
+            </h1>
+
+            <p>
+                Visão geral da operação da GoCar.
+                Acompanhe frota, clientes, locações e financeiro.
+            </p>
+
+        </div>
+
+        <div class="gcd-date-box">
+
+            <strong>
+                📅 @DateTime.Now.ToString("dd 'de' MMMM 'de' yyyy")
+            </strong>
+
+            <span>
+                Última atualização:
+                @DateTime.Now.ToString("HH:mm")
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ALERTA
+    ====================================================== -->
+    @if (TempData["Erro"] != null)
+    {
+        <div class="gcd-alert">
+
+            <span>
+                ⚠
+            </span>
+
+            @TempData["Erro"]
+
+        </div>
+    }
+
+
+    <!-- =====================================================
+         INDICADORES
+    ====================================================== -->
+
+    <div class="gcd-metrics">
+
+        <div class="gcd-card">
+
+            <div class="gcd-card-icon">
+                🚘
+            </div>
+
+            <div class="gcd-card-label">
+                Total de veículos
+            </div>
+
+            <div class="gcd-card-value">
+                @Model.TotalVeiculos
+            </div>
+
+            <div class="gcd-card-footer">
+
+                <span class="gcd-green">
+                    @Model.VeiculosDisponiveis
+                </span>
+
+                disponíveis para locação
+
+            </div>
+
+        </div>
+
+
+        <div class="gcd-card">
+
+            <div class="gcd-card-icon">
+                ▣
+            </div>
+
+            <div class="gcd-card-label">
+                Locações ativas
+            </div>
+
+            <div class="gcd-card-value">
+                @Model.LocacoesAtivas
+            </div>
+
+            <div class="gcd-card-footer">
+
+                <span class="gcd-green">
+                    @Model.ReservasPendentes
+                </span>
+
+                reservas aguardando retirada
+
+            </div>
+
+        </div>
+
+
+        <div class="gcd-card">
+
+            <div class="gcd-card-icon">
+                ♙
+            </div>
+
+            <div class="gcd-card-label">
+                Clientes cadastrados
+            </div>
+
+            <div class="gcd-card-value">
+                @Model.TotalClientes
+            </div>
+
+            <div class="gcd-card-footer">
+                Clientes ativos no sistema
+            </div>
+
+        </div>
+
+
+        <div class="gcd-card">
+
+            <div class="gcd-card-icon">
+                $
+            </div>
+
+            <div class="gcd-card-label">
+                Total recebido
+            </div>
+
+            <div class="gcd-card-value">
+                @Model.TotalRecebido.ToString("C")
+            </div>
+
+            <div class="gcd-card-footer">
+
+                <span class="gcd-green">
+                    ✓
+                </span>
+
+                pagamentos confirmados
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CENTRO
+    ====================================================== -->
+
+    <div class="gcd-main-grid">
+
+        <section class="gcd-panel">
+
+            <div class="gcd-panel-header">
+
+                <div>
+
+                    <div class="gcd-panel-title">
+                        Resumo operacional
+                    </div>
+
+                    <div class="gcd-panel-subtitle">
+                        Situação atual da frota e das reservas
+                    </div>
+
+                </div>
+
+                <a asp-controller="Veiculos"
+                   asp-action="Index"
+                   class="gcd-link">
+
+                    Ver frota →
+
+                </a>
+
+            </div>
+
+            <div class="gcd-overview">
+
+                <div class="gcd-overview-intro">
+                    Utilize os indicadores abaixo para acompanhar
+                    rapidamente o estado atual da operação.
+                </div>
+
+                <div class="gcd-overview-grid">
+
+                    <div class="gcd-overview-item">
+
+                        <div class="gcd-overview-icon">
+                            🚗
+                        </div>
+
+                        <div class="gcd-overview-label">
+                            Veículos disponíveis
+                        </div>
+
+                        <div class="gcd-overview-value">
+                            @Model.VeiculosDisponiveis
+                        </div>
+
+                    </div>
+
+
+                    <div class="gcd-overview-item">
+
+                        <div class="gcd-overview-icon">
+                            📋
+                        </div>
+
+                        <div class="gcd-overview-label">
+                            Reservas pendentes
+                        </div>
+
+                        <div class="gcd-overview-value">
+                            @Model.ReservasPendentes
+                        </div>
+
+                    </div>
+
+
+                    <div class="gcd-overview-item">
+
+                        <div class="gcd-overview-icon">
+                            🔑
+                        </div>
+
+                        <div class="gcd-overview-label">
+                            Locações ativas
+                        </div>
+
+                        <div class="gcd-overview-value">
+                            @Model.LocacoesAtivas
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="gcd-panel">
+
+            <div class="gcd-panel-header">
+
+                <div>
+
+                    <div class="gcd-panel-title">
+                        Operação de hoje
+                    </div>
+
+                    <div class="gcd-panel-subtitle">
+                        Retiradas e devoluções programadas
+                    </div>
+
+                </div>
+
+                <span class="gcd-link">
+                    @totalOperacoesHoje operações
+                </span>
+
+            </div>
+
+            <div class="gcd-operation">
+
+                @if (Model.RetiradasHoje.Count > 0)
+                {
+                    @foreach (var item in Model.RetiradasHoje.Take(3))
+                    {
+                        <div class="gcd-operation-item">
+
+                            <div class="gcd-operation-icon">
+                                🚗
+                            </div>
+
+                            <div class="gcd-operation-info">
+
+                                <strong>
+                                    Retirada — @item.ClienteNome
+                                </strong>
+
+                                <span>
+                                    @item.VeiculoNome
+                                    •
+                                    @item.VeiculoPlaca
+                                </span>
+
+                            </div>
+
+                            <div class="gcd-operation-time">
+                                @item.DataHora.ToString("HH:mm")
+                            </div>
+
+                        </div>
+                    }
+                }
+
+
+                @if (Model.DevolucoesHoje.Count > 0)
+                {
+                    @foreach (var item in Model.DevolucoesHoje.Take(3))
+                    {
+                        <div class="gcd-operation-item">
+
+                            <div class="gcd-operation-icon">
+                                ↩
+                            </div>
+
+                            <div class="gcd-operation-info">
+
+                                <strong>
+                                    Devolução — @item.ClienteNome
+                                </strong>
+
+                                <span>
+                                    @item.VeiculoNome
+                                    •
+                                    @item.VeiculoPlaca
+                                </span>
+
+                            </div>
+
+                            <div class="gcd-operation-time">
+                                @item.DataHora.ToString("HH:mm")
+                            </div>
+
+                        </div>
+                    }
+                }
+
+
+                @if (Model.RetiradasHoje.Count == 0 &&
+                     Model.DevolucoesHoje.Count == 0)
+                {
+                    <div class="gcd-empty">
+
+                        <div class="gcd-empty-icon">
+                            ✓
+                        </div>
+
+                        Nenhuma retirada ou devolução
+                        prevista para hoje.
+
+                    </div>
+                }
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         VEÍCULOS + ATALHOS
+    ====================================================== -->
+
+    <div class="gcd-bottom-grid">
+
+        <section class="gcd-panel">
+
+            <div class="gcd-panel-header">
+
+                <div>
+
+                    <div class="gcd-panel-title">
+                        Últimos veículos cadastrados
+                    </div>
+
+                    <div class="gcd-panel-subtitle">
+                        Veículos adicionados recentemente à frota
+                    </div>
+
+                </div>
+
+                <a asp-controller="Veiculos"
+                   asp-action="Index"
+                   class="gcd-link">
+
+                    Ver todos →
+
+                </a>
+
+            </div>
+
+            <div class="gcd-table-wrap">
+
+                @if (Model.VeiculosRecentes.Any())
+                {
+                    <table class="gcd-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    VEÍCULO
+                                </th>
+
+                                <th>
+                                    CATEGORIA
+                                </th>
+
+                                <th>
+                                    PLACA
+                                </th>
+
+                                <th>
+                                    STATUS
+                                </th>
+
+                                <th>
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var veiculo in Model.VeiculosRecentes)
+                            {
+                                var imagem =
+                                    VeiculoImagemHelper.ObterImagem(
+                                        veiculo.Marca,
+                                        veiculo.Modelo);
+
+                                <tr>
+
+                                    <td>
+
+                                        <div class="gcd-car">
+
+                                            <img src="@imagem"
+                                                 alt="@($"{veiculo.Marca} {veiculo.Modelo}")"
+                                                 class="gcd-car-img" />
+
+                                            <div>
+
+                                                <div class="gcd-car-name">
+                                                    @veiculo.Marca
+                                                    @veiculo.Modelo
+                                                </div>
+
+                                                <div class="gcd-car-brand">
+                                                    Modelo @veiculo.AnoModelo
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+                                    <td>
+                                        Categoria
+                                        #@veiculo.CategoriaId
+                                    </td>
+
+                                    <td>
+
+                                        <span class="gcd-plate">
+                                            @veiculo.Placa
+                                        </span>
+
+                                    </td>
+
+                                    <td>
+
+                                        <span class="gcd-status @ClasseStatus(veiculo.Status)">
+                                            @StatusVeiculo(veiculo.Status)
+                                        </span>
+
+                                    </td>
+
+                                    <td>
+
+                                        <a asp-controller="Veiculos"
+                                           asp-action="Detalhes"
+                                           asp-route-id="@veiculo.Id"
+                                           class="gcd-action"
+                                           title="Visualizar veículo">
+
+                                            →
+
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+                }
+                else
+                {
+                    <div class="gcd-empty">
+
+                        <div class="gcd-empty-icon">
+                            🚗
+                        </div>
+
+                        Nenhum veículo cadastrado recentemente.
+
+                    </div>
+                }
+
+            </div>
+
+        </section>
+
+
+        <section class="gcd-panel">
+
+            <div class="gcd-panel-header">
+
+                <div>
+
+                    <div class="gcd-panel-title">
+                        Acesso rápido
+                    </div>
+
+                    <div class="gcd-panel-subtitle">
+                        Ações mais utilizadas
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="gcd-shortcuts">
+
+                <a asp-controller="Veiculos"
+                   asp-action="Criar"
+                   class="gcd-shortcut">
+
+                    <div class="gcd-shortcut-icon">
+                        🚘
+                    </div>
+
+                    <span class="gcd-shortcut-text">
+                        Cadastrar veículo
+                    </span>
+
+                    <span class="gcd-shortcut-arrow">
+                        →
+                    </span>
+
+                </a>
+
+
+                <a asp-controller="Clientes"
+                   asp-action="Index"
+                   class="gcd-shortcut">
+
+                    <div class="gcd-shortcut-icon">
+                        ♙
+                    </div>
+
+                    <span class="gcd-shortcut-text">
+                        Gerenciar clientes
+                    </span>
+
+                    <span class="gcd-shortcut-arrow">
+                        →
+                    </span>
+
+                </a>
+
+
+                <a asp-controller="Reservas"
+                   asp-action="Index"
+                   class="gcd-shortcut">
+
+                    <div class="gcd-shortcut-icon">
+                        ▣
+                    </div>
+
+                    <span class="gcd-shortcut-text">
+                        Ver reservas
+                    </span>
+
+                    <span class="gcd-shortcut-arrow">
+                        →
+                    </span>
+
+                </a>
+
+
+                <a asp-controller="Locacoes"
+                   asp-action="Index"
+                   class="gcd-shortcut">
+
+                    <div class="gcd-shortcut-icon">
+                        ▦
+                    </div>
+
+                    <span class="gcd-shortcut-text">
+                        Gerenciar locações
+                    </span>
+
+                    <span class="gcd-shortcut-arrow">
+                        →
+                    </span>
+
+                </a>
+
+
+                <a asp-controller="Pagamentos"
+                   asp-action="Index"
+                   class="gcd-shortcut">
+
+                    <div class="gcd-shortcut-icon">
+                        $
+                    </div>
+
+                    <span class="gcd-shortcut-text">
+                        Financeiro
+                    </span>
+
+                    <span class="gcd-shortcut-arrow">
+                        →
+                    </span>
+
+                </a>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>

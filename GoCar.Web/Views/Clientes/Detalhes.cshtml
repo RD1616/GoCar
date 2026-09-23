@@ -1,0 +1,1030 @@
+﻿@model GoCar.Web.Models.VeiculoViewModel
+@using GoCar.Web.Helpers
+
+@{
+    ViewData["Title"] = "Detalhes do Veículo";
+
+    string Combustivel(int valor)
+    {
+        return valor switch
+        {
+            1 => "Gasolina",
+            2 => "Etanol",
+            3 => "Flex",
+            4 => "Diesel",
+            5 => "Elétrico",
+            6 => "Híbrido",
+            _ => "Desconhecido"
+        };
+    }
+
+    string Cambio(int valor)
+    {
+        return valor switch
+        {
+            1 => "Manual",
+            2 => "Automático",
+            3 => "Automatizado",
+            4 => "CVT",
+            _ => "Desconhecido"
+        };
+    }
+
+    string Status(int valor)
+    {
+        return valor switch
+        {
+            1 => "Disponível",
+            2 => "Reservado",
+            3 => "Alugado",
+            4 => "Manutenção",
+            5 => "Inativo",
+            _ => "Desconhecido"
+        };
+    }
+
+    string ClasseStatus(int valor)
+    {
+        return valor switch
+        {
+            1 => "vehicle-status-available",
+            2 => "vehicle-status-reserved",
+            3 => "vehicle-status-rented",
+            4 => "vehicle-status-maintenance",
+            5 => "vehicle-status-inactive",
+            _ => "vehicle-status-inactive"
+        };
+    }
+
+    var imagemVeiculo =
+        VeiculoImagemHelper.ObterImagem(
+            Model.Marca,
+            Model.Modelo);
+}
+
+<style>
+
+    .vehicle-details-page {
+        max-width: 1500px;
+        margin: auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    /* HEADER */
+
+    .vehicle-details-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .vehicle-details-eyebrow {
+        margin-bottom: 4px;
+        color: #a99fb4;
+        font-size: .90rem;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        font-weight: 700;
+    }
+
+    .vehicle-details-title {
+        margin: 0;
+        color: #fff;
+        font-size: 1.85rem;
+        font-weight: 800;
+    }
+
+    .vehicle-details-description {
+        margin: 6px 0 0;
+        color: #aaa0b5;
+        font-size: .96rem;
+    }
+
+    .vehicle-details-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .vehicle-back-btn,
+    .vehicle-edit-btn {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: .90rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+    .vehicle-back-btn {
+        border: 1px solid rgba(151,71,255,.24);
+        background: rgba(126,44,255,.06);
+        color: #fff !important;
+    }
+
+        .vehicle-back-btn:visited,
+        .vehicle-back-btn:focus,
+        .vehicle-back-btn:active {
+            color: #fff !important;
+        }
+
+        .vehicle-back-btn:hover {
+            color: #fff !important;
+            border-color: rgba(151,71,255,.45);
+            background: rgba(126,44,255,.12);
+        }
+
+    .vehicle-edit-btn {
+        border: 1px solid #8b3dff;
+        background: linear-gradient( 135deg, #7c2cff, #9b4dff );
+        color: #fff !important;
+        box-shadow: 0 8px 25px rgba(126,44,255,.18);
+    }
+
+        .vehicle-edit-btn:visited,
+        .vehicle-edit-btn:focus,
+        .vehicle-edit-btn:active {
+            color: #fff !important;
+        }
+
+        .vehicle-edit-btn:hover {
+            color: #fff !important;
+            transform: translateY(-1px);
+        }
+
+    /* HERO */
+
+    .vehicle-details-hero {
+        display: grid;
+        grid-template-columns: 430px 1fr;
+        overflow: hidden;
+        margin-bottom: 16px;
+        border: 1px solid rgba(151,71,255,.17);
+        border-radius: 12px;
+        background: linear-gradient( 145deg, rgba(22,12,38,.98), rgba(12,7,22,.98) );
+    }
+
+    .vehicle-image-area {
+        position: relative;
+        min-height: 290px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 30px;
+        border-right: 1px solid rgba(151,71,255,.12);
+        background: radial-gradient( circle at center, rgba(130,49,255,.13), transparent 62% ), rgba(7,4,13,.55);
+    }
+
+        .vehicle-image-area::after {
+            content: "";
+            position: absolute;
+            width: 250px;
+            height: 45px;
+            bottom: 33px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: rgba(0,0,0,.35);
+            filter: blur(13px);
+        }
+
+    .vehicle-main-image {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 360px;
+        max-height: 230px;
+        object-fit: contain;
+        transition: transform .25s ease;
+    }
+
+    .vehicle-image-area:hover
+    .vehicle-main-image {
+        transform: scale(1.025);
+    }
+
+    .vehicle-id-badge {
+        position: absolute;
+        z-index: 3;
+        top: 16px;
+        left: 16px;
+        padding: 5px 9px;
+        border: 1px solid rgba(151,71,255,.22);
+        border-radius: 6px;
+        background: rgba(8,4,14,.8);
+        color: #b8adbf;
+        font-size: .82rem;
+        font-weight: 700;
+    }
+
+    .vehicle-main-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 30px;
+    }
+
+    .vehicle-main-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .vehicle-brand {
+        color: #a99fb4;
+        font-size: .90rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .7px;
+    }
+
+    .vehicle-name {
+        margin: 4px 0 0;
+        color: #fff;
+        font-size: 1.75rem;
+        font-weight: 800;
+    }
+
+    .vehicle-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: .84rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+        .vehicle-status::before {
+            content: "";
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+    .vehicle-status-available {
+        color: #3ce78c;
+        background: rgba(26,192,103,.12);
+    }
+
+    .vehicle-status-reserved {
+        color: #fbbf24;
+        background: rgba(245,158,11,.12);
+    }
+
+    .vehicle-status-rented {
+        color: #60a5fa;
+        background: rgba(59,130,246,.13);
+    }
+
+    .vehicle-status-maintenance {
+        color: #fb923c;
+        background: rgba(249,115,22,.13);
+    }
+
+    .vehicle-status-inactive {
+        color: #b4becb;
+        background: rgba(148,163,184,.10);
+    }
+
+    .vehicle-main-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 22px;
+    }
+
+    .vehicle-meta-chip {
+        padding: 6px 9px;
+        border: 1px solid rgba(151,71,255,.12);
+        border-radius: 6px;
+        background: rgba(255,255,255,.02);
+        color: #c0b6c9;
+        font-size: .86rem;
+    }
+
+    .vehicle-price-block {
+        padding-top: 18px;
+        border-top: 1px solid rgba(255,255,255,.05);
+    }
+
+    .vehicle-price-label {
+        color: #a99fb4;
+        font-size: .84rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .vehicle-price {
+        margin-top: 3px;
+        color: #c084fc;
+        font-size: 1.55rem;
+        font-weight: 800;
+    }
+
+        .vehicle-price span {
+            color: #aaa0b5;
+            font-size: .84rem;
+            font-weight: 600;
+        }
+
+    /* CARDS */
+
+    .vehicle-details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .vehicle-info-card {
+        overflow: hidden;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .vehicle-info-card-header {
+        padding: 14px 17px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+        .vehicle-info-card-header small {
+            display: block;
+            margin-bottom: 2px;
+            color: #aaa0b5;
+            font-size: .82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .vehicle-info-card-header h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+    .vehicle-info-card-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 4px 17px 15px;
+    }
+
+    .vehicle-info-item {
+        padding: 14px 5px;
+        border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+
+        .vehicle-info-item:nth-last-child(-n+2) {
+            border-bottom: 0;
+        }
+
+    .vehicle-info-label {
+        margin-bottom: 4px;
+        color: #aaa0b5;
+        font-size: .80rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+    }
+
+    .vehicle-info-value {
+        color: #e1dae7;
+        font-size: .94rem;
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .vehicle-info-highlight {
+        color: #d2b4f5;
+    }
+
+    /* CADASTRO */
+
+    .vehicle-registration {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: .88rem;
+        font-weight: 700;
+    }
+
+    .vehicle-registration-active {
+        color: #3ce78c;
+    }
+
+    .vehicle-registration-inactive {
+        color: #ff718d;
+    }
+
+    /* FOOTER */
+
+    .vehicle-details-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 17px;
+        padding-top: 17px;
+        border-top: 1px solid rgba(255,255,255,.04);
+    }
+
+    @@media (max-width: 1000px) {
+
+        .vehicle-details-hero {
+            grid-template-columns: 1fr;
+        }
+
+        .vehicle-image-area {
+            border-right: 0;
+            border-bottom: 1px solid rgba(151,71,255,.12);
+        }
+    }
+
+    @@media (max-width: 700px) {
+
+        .vehicle-details-page {
+            padding: 20px 15px;
+        }
+
+        .vehicle-details-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .vehicle-details-actions {
+            width: 100%;
+        }
+
+            .vehicle-details-actions a {
+                flex: 1;
+            }
+
+        .vehicle-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .vehicle-main-top {
+            flex-direction: column;
+        }
+
+        .vehicle-info-card-body {
+            grid-template-columns: 1fr;
+        }
+
+        .vehicle-info-item:nth-last-child(-n+2) {
+            border-bottom: 1px solid rgba(255,255,255,.04);
+        }
+
+        .vehicle-info-item:last-child {
+            border-bottom: 0;
+        }
+
+        .vehicle-details-footer {
+            flex-direction: column-reverse;
+        }
+
+            .vehicle-details-footer a {
+                width: 100%;
+            }
+    }
+
+</style>
+
+<div class="vehicle-details-page">
+
+    <!-- HEADER -->
+
+    <div class="vehicle-details-header">
+
+        <div>
+
+            <div class="vehicle-details-eyebrow">
+                Gerenciamento da frota
+            </div>
+
+            <h1 class="vehicle-details-title">
+                Detalhes do Veículo
+            </h1>
+
+            <p class="vehicle-details-description">
+                Informações completas da unidade selecionada.
+            </p>
+
+        </div>
+
+        <div class="vehicle-details-actions">
+
+            <a asp-controller="Veiculos"
+               asp-action="Index"
+               class="vehicle-back-btn">
+
+                ← Voltar
+
+            </a>
+
+            <a asp-controller="Veiculos"
+               asp-action="Editar"
+               asp-route-id="@Model.Id"
+               class="vehicle-edit-btn">
+
+                Editar Veículo
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- HERO -->
+
+    <div class="vehicle-details-hero">
+
+        <div class="vehicle-image-area">
+
+            <div class="vehicle-id-badge">
+                VEÍCULO #@Model.Id
+            </div>
+
+            <img src="@imagemVeiculo"
+                 alt="@($"{Model.Marca} {Model.Modelo}")"
+                 class="vehicle-main-image" />
+
+        </div>
+
+        <div class="vehicle-main-info">
+
+            <div class="vehicle-main-top">
+
+                <div>
+
+                    <div class="vehicle-brand">
+                        @Model.Marca
+                    </div>
+
+                    <h2 class="vehicle-name">
+                        @Model.Modelo
+                    </h2>
+
+                </div>
+
+                <span class="
+                    vehicle-status
+                    @ClasseStatus(Model.Status)">
+
+                    @Status(Model.Status)
+
+                </span>
+
+            </div>
+
+            <div class="vehicle-main-meta">
+
+                <span class="vehicle-meta-chip">
+                    @Model.Placa
+                </span>
+
+                <span class="vehicle-meta-chip">
+                    @Model.AnoModelo
+                </span>
+
+                <span class="vehicle-meta-chip">
+                    @Model.Cor
+                </span>
+
+                <span class="vehicle-meta-chip">
+                    @Cambio(Model.Cambio)
+                </span>
+
+                <span class="vehicle-meta-chip">
+                    @Combustivel(Model.Combustivel)
+                </span>
+
+                <span class="vehicle-meta-chip">
+                    @ViewBag.CategoriaNome
+                </span>
+
+            </div>
+
+            <div class="vehicle-price-block">
+
+                <div class="vehicle-price-label">
+                    Valor da diária
+                </div>
+
+                <div class="vehicle-price">
+
+                    @(Model.ValorDiaria.ToString("C"))
+
+                    <span>
+                        / dia
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="vehicle-details-grid">
+
+        <!-- IDENTIFICAÇÃO -->
+
+        <div class="vehicle-info-card">
+
+            <div class="vehicle-info-card-header">
+
+                <small>
+                    Identificação
+                </small>
+
+                <h3>
+                    Dados do veículo
+                </h3>
+
+            </div>
+
+            <div class="vehicle-info-card-body">
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        ID
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        #@Model.Id
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Placa
+                    </div>
+
+                    <div class="
+                        vehicle-info-value
+                        vehicle-info-highlight">
+
+                        @Model.Placa
+
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Chassi
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Model.Chassi
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Renavam
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Model.Renavam
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Marca
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Model.Marca
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Modelo
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Model.Modelo
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ESPECIFICAÇÕES -->
+
+        <div class="vehicle-info-card">
+
+            <div class="vehicle-info-card-header">
+
+                <small>
+                    Especificações
+                </small>
+
+                <h3>
+                    Características
+                </h3>
+
+            </div>
+
+            <div class="vehicle-info-card-body">
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Ano de fabricação
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Model.AnoFabricacao
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Ano modelo
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Model.AnoModelo
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Cor
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Model.Cor
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Combustível
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Combustivel(Model.Combustivel)
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Câmbio
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Cambio(Model.Cambio)
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Quilometragem
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @(Model.KmAtual.ToString("N0")) km
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- OPERAÇÃO -->
+
+        <div class="vehicle-info-card">
+
+            <div class="vehicle-info-card-header">
+
+                <small>
+                    Operação
+                </small>
+
+                <h3>
+                    Localização e categoria
+                </h3>
+
+            </div>
+
+            <div class="vehicle-info-card-body">
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Categoria
+                    </div>
+
+                    <div class="
+                        vehicle-info-value
+                        vehicle-info-highlight">
+
+                        @ViewBag.CategoriaNome
+
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Filial
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @ViewBag.FilialNome
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Status operacional
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Status(Model.Status)
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Valor da diária
+                    </div>
+
+                    <div class="
+                        vehicle-info-value
+                        vehicle-info-highlight">
+
+                        @(Model.ValorDiaria.ToString("C"))
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- SISTEMA -->
+
+        <div class="vehicle-info-card">
+
+            <div class="vehicle-info-card-header">
+
+                <small>
+                    Sistema
+                </small>
+
+                <h3>
+                    Situação do cadastro
+                </h3>
+
+            </div>
+
+            <div class="vehicle-info-card-body">
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Cadastro
+                    </div>
+
+                    @if (Model.IsAtivo)
+                    {
+                        <div class="
+                            vehicle-registration
+                            vehicle-registration-active">
+
+                            ● Ativo
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="
+                            vehicle-registration
+                            vehicle-registration-inactive">
+
+                            ● Inativo
+
+                        </div>
+                    }
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Disponibilidade
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        @Status(Model.Status)
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Unidade
+                    </div>
+
+                    <div class="vehicle-info-value">
+                        #@Model.Id
+                    </div>
+
+                </div>
+
+                <div class="vehicle-info-item">
+
+                    <div class="vehicle-info-label">
+                        Placa
+                    </div>
+
+                    <div class="
+                        vehicle-info-value
+                        vehicle-info-highlight">
+
+                        @Model.Placa
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="vehicle-details-footer">
+
+        <a asp-controller="Veiculos"
+           asp-action="Index"
+           class="vehicle-back-btn">
+
+            Voltar para a frota
+
+        </a>
+
+        <a asp-controller="Veiculos"
+           asp-action="Editar"
+           asp-route-id="@Model.Id"
+           class="vehicle-edit-btn">
+
+            Editar Veículo
+
+        </a>
+
+    </div>
+
+</div>

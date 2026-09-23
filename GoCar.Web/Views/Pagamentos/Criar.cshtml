@@ -1,0 +1,1053 @@
+﻿@model GoCar.Web.Models.CriarPagamentoViewModel
+@using GoCar.Web.Models
+@using System.Globalization
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Novo Pagamento";
+
+    var locacoes =
+        ViewBag.Locacoes as List<LocacaoViewModel>
+        ?? new List<LocacaoViewModel>();
+
+    var tipoInicialJson =
+        JsonSerializer.Serialize(
+            Model.Tipo ?? string.Empty);
+
+    var valorInicial =
+        Model.Valor.ToString(
+            CultureInfo.InvariantCulture);
+}
+
+<style>
+
+    .payment-create-page {
+        color: #fff;
+    }
+
+        .payment-create-page .container {
+            max-width: 1500px;
+        }
+
+    .payment-create-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .payment-create-eyebrow {
+        margin-bottom: 5px;
+        color: #a98cc9;
+        font-size: .86rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .65px;
+    }
+
+    .payment-create-title {
+        margin: 0;
+        color: #fff;
+        font-size: 1.85rem;
+        font-weight: 800;
+    }
+
+    .payment-create-description {
+        margin: 6px 0 0;
+        color: #aaa0b5;
+        font-size: .96rem;
+        line-height: 1.5;
+    }
+
+    .payment-create-back {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+        border: 1px solid rgba(151,71,255,.24);
+        border-radius: 8px;
+        background: rgba(126,44,255,.06);
+        color: #c7b6dc;
+        text-decoration: none;
+        font-size: .90rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+        .payment-create-back:hover {
+            border-color: rgba(151,71,255,.45);
+            background: rgba(126,44,255,.12);
+            color: #fff;
+        }
+
+    .payment-create-card {
+        border: 1px solid rgba(151,71,255,.16) !important;
+        border-radius: 11px !important;
+        background: radial-gradient( circle at 92% 8%, rgba(126,44,255,.07), transparent 30% ), linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) ) !important;
+        box-shadow: none !important;
+    }
+
+        .payment-create-card .card-body {
+            padding: 24px !important;
+        }
+
+    .payment-create-page .form-label {
+        margin-bottom: 7px;
+        color: #c8bfce;
+        font-size: .90rem;
+        font-weight: 700 !important;
+    }
+
+    .payment-create-page .form-control,
+    .payment-create-page .form-select {
+        min-height: 43px;
+        border: 1px solid rgba(151,71,255,.18);
+        border-radius: 8px;
+        background-color: rgba(255,255,255,.025);
+        color: #e2dce8;
+        font-size: .90rem;
+    }
+
+        .payment-create-page .form-control:focus,
+        .payment-create-page .form-select:focus {
+            border-color: rgba(151,71,255,.65);
+            background-color: rgba(126,44,255,.045);
+            color: #fff;
+            box-shadow: 0 0 0 3px rgba(126,44,255,.07);
+        }
+
+        .payment-create-page .form-select option {
+            background: #160d25;
+            color: #fff;
+        }
+
+    .payment-create-page textarea.form-control {
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    .payment-create-page input[type="datetime-local"] {
+        color-scheme: dark;
+    }
+
+    .payment-create-page .input-group-text {
+        border: 1px solid rgba(151,71,255,.18);
+        border-right: 0;
+        background: rgba(126,44,255,.09);
+        color: #c89bff;
+        font-size: .90rem;
+        font-weight: 700;
+    }
+
+    .payment-create-page .input-group .form-control {
+        border-left: 0;
+    }
+
+    .payment-create-page small.text-muted {
+        display: block;
+        margin-top: 6px;
+        color: #8f859a !important;
+        font-size: .82rem;
+        line-height: 1.45;
+    }
+
+    .payment-create-page .text-danger {
+        display: block;
+        margin-top: 5px;
+        font-size: .82rem;
+    }
+
+    .payment-create-page .alert {
+        border-radius: 9px;
+        font-size: .88rem;
+        line-height: 1.5;
+    }
+
+    .payment-create-page .btn {
+        min-height: 41px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding-left: 16px;
+        padding-right: 16px;
+        border-radius: 8px;
+        font-size: .90rem;
+        font-weight: 700;
+    }
+
+    .payment-create-page .btn-outline-secondary {
+        border-color: rgba(255,255,255,.16);
+        background: rgba(255,255,255,.025);
+        color: #c0b6c9;
+    }
+
+        .payment-create-page .btn-outline-secondary:hover {
+            background: rgba(255,255,255,.07);
+            color: #fff;
+        }
+
+    .payment-create-page .btn-success {
+        border-color: rgba(34,197,94,.55);
+        background: linear-gradient( 135deg, #159447, #22b95f );
+        color: #fff;
+    }
+
+    @@media (max-width: 768px) {
+
+        .payment-create-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .payment-create-back {
+            width: 100%;
+        }
+
+        .payment-create-card .card-body {
+            padding: 18px !important;
+        }
+
+        .payment-create-title {
+            font-size: 1.55rem;
+        }
+    }
+
+</style>
+
+
+<section class="gocar-section payment-create-page">
+
+    <div class="container">
+
+        <div class="payment-create-header">
+
+            <div>
+
+                <div class="payment-create-eyebrow">
+                    Financeiro
+                </div>
+
+                <h1 class="payment-create-title">
+                    Novo Pagamento
+                </h1>
+
+                <p class="payment-create-description">
+                    Cadastre uma cobrança para uma locação.
+                </p>
+
+            </div>
+
+
+            <a asp-controller="Pagamentos"
+               asp-action="Index"
+               class="payment-create-back">
+
+                Voltar
+
+            </a>
+
+        </div>
+
+
+        <div class="card payment-create-card">
+
+            <div class="card-body">
+
+                <form asp-controller="Pagamentos"
+                      asp-action="Criar"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="alert alert-danger">
+                    </div>
+
+
+                    <div class="row g-4">
+
+                        <!-- ================================= -->
+                        <!-- LOCAÇÃO -->
+                        <!-- ================================= -->
+
+                        <div class="col-md-6">
+
+                            <label asp-for="LocacaoId"
+                                   class="form-label fw-semibold">
+
+                                Locação
+
+                            </label>
+
+
+                            <select asp-for="LocacaoId"
+                                    id="locacaoSelect"
+                                    class="form-select"
+                                    required>
+
+                                <option value="0">
+                                    Selecione uma locação
+                                </option>
+
+
+                                @foreach (var locacao in locacoes)
+                                {
+                                    var statusNome =
+                                        locacao.Status == 1
+                                            ? "Ativa"
+                                            : "Finalizada";
+
+                                    <option value="@locacao.Id"
+                                            data-status="@locacao.Status"
+                                            data-valor="@locacao.ValorTotal.ToString(CultureInfo.InvariantCulture)">
+
+                                        Locação #@locacao.Id
+                                        — Reserva #@locacao.ReservaId
+                                        — @statusNome
+                                        — @(locacao.ValorTotal.ToString("C"))
+
+                                    </option>
+                                }
+
+                            </select>
+
+
+                            <span asp-validation-for="LocacaoId"
+                                  class="text-danger">
+                            </span>
+
+
+                            <small id="informacaoLocacao"
+                                   class="text-muted">
+
+                                Selecione a locação que receberá a cobrança.
+
+                            </small>
+
+                        </div>
+
+
+                        <!-- ================================= -->
+                        <!-- TIPO -->
+                        <!-- ================================= -->
+
+                        <div class="col-md-6">
+
+                            <label asp-for="Tipo"
+                                   class="form-label fw-semibold">
+
+                                Tipo
+
+                            </label>
+
+
+                            <select asp-for="Tipo"
+                                    id="tipoPagamento"
+                                    class="form-select"
+                                    required>
+
+                                <option value="">
+                                    Selecione primeiro a locação
+                                </option>
+
+                            </select>
+
+
+                            <span asp-validation-for="Tipo"
+                                  class="text-danger">
+                            </span>
+
+
+                            <small id="informacaoTipo"
+                                   class="text-muted">
+
+                                Os tipos disponíveis dependem da situação da locação.
+
+                            </small>
+
+                        </div>
+
+
+                        <!-- ================================= -->
+                        <!-- FORMA DE PAGAMENTO -->
+                        <!-- ================================= -->
+
+                        <div class="col-md-6">
+
+                            <label asp-for="FormaPagamento"
+                                   class="form-label fw-semibold">
+
+                                Forma de pagamento
+
+                            </label>
+
+
+                            <select asp-for="FormaPagamento"
+                                    class="form-select"
+                                    required>
+
+                                <option value="0">
+                                    Selecione
+                                </option>
+
+                                <option value="1">
+                                    Pix
+                                </option>
+
+                                <option value="2">
+                                    Cartão de Crédito
+                                </option>
+
+                                <option value="3">
+                                    Cartão de Débito
+                                </option>
+
+                                <option value="4">
+                                    Dinheiro
+                                </option>
+
+                            </select>
+
+
+                            <span asp-validation-for="FormaPagamento"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <!-- ================================= -->
+                        <!-- STATUS -->
+                        <!-- ================================= -->
+
+                        <div class="col-md-6">
+
+                            <label asp-for="Status"
+                                   class="form-label fw-semibold">
+
+                                Status
+
+                            </label>
+
+
+                            <select asp-for="Status"
+                                    id="statusPagamento"
+                                    class="form-select">
+
+                                <option value="1">
+                                    Pendente
+                                </option>
+
+                                <option value="2">
+                                    Pago
+                                </option>
+
+                            </select>
+
+
+                            <span asp-validation-for="Status"
+                                  class="text-danger">
+                            </span>
+
+
+                            <small class="text-muted">
+
+                                Cancelamento e estorno são feitos após a criação do pagamento.
+
+                            </small>
+
+                        </div>
+
+
+                        <!-- ================================= -->
+                        <!-- VALOR -->
+                        <!-- ================================= -->
+
+                        <div class="col-md-6">
+
+                            <label asp-for="Valor"
+                                   class="form-label fw-semibold">
+
+                                Valor
+
+                            </label>
+
+
+                            <div class="input-group">
+
+                                <span class="input-group-text">
+                                    R$
+                                </span>
+
+
+                                <input asp-for="Valor"
+                                       id="valorPagamento"
+                                       class="form-control"
+                                       type="number"
+                                       step="0.01"
+                                       min="0.01"
+                                       value="@valorInicial" />
+
+                            </div>
+
+
+                            <span asp-validation-for="Valor"
+                                  class="text-danger">
+                            </span>
+
+
+                            <small id="informacaoValor"
+                                   class="text-muted">
+
+                                Para multa ou adicional, informe o valor da cobrança.
+
+                            </small>
+
+                        </div>
+
+
+                        <!-- ================================= -->
+                        <!-- DATA DO PAGAMENTO -->
+                        <!-- ================================= -->
+
+                        <div class="col-md-6"
+                             id="campoDataPagamento">
+
+                            <label asp-for="DataPagamento"
+                                   class="form-label fw-semibold">
+
+                                Data do pagamento
+
+                            </label>
+
+
+                            <input asp-for="DataPagamento"
+                                   class="form-control"
+                                   type="datetime-local" />
+
+
+                            <span asp-validation-for="DataPagamento"
+                                  class="text-danger">
+                            </span>
+
+
+                            <small class="text-muted">
+
+                                Se ficar vazio e o status for Pago,
+                                será usada a data atual.
+
+                            </small>
+
+                        </div>
+
+
+                        <!-- ================================= -->
+                        <!-- OBSERVAÇÕES -->
+                        <!-- ================================= -->
+
+                        <div class="col-12">
+
+                            <label asp-for="Observacoes"
+                                   class="form-label fw-semibold">
+
+                                Observações
+
+                            </label>
+
+
+                            <textarea asp-for="Observacoes"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Observações sobre o pagamento..."></textarea>
+
+
+                            <span asp-validation-for="Observacoes"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+
+                        <a asp-controller="Pagamentos"
+                           asp-action="Index"
+                           class="btn btn-outline-secondary">
+
+                            Cancelar
+
+                        </a>
+
+
+                        <button type="submit"
+                                class="btn btn-success">
+
+                            Criar Pagamento
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+
+    <script>
+
+        const locacaoSelect =
+            document.getElementById(
+                "locacaoSelect");
+
+        const tipoSelect =
+            document.getElementById(
+                "tipoPagamento");
+
+        const statusSelect =
+            document.getElementById(
+                "statusPagamento");
+
+        const valorInput =
+            document.getElementById(
+                "valorPagamento");
+
+        const campoData =
+            document.getElementById(
+                "campoDataPagamento");
+
+        const informacaoLocacao =
+            document.getElementById(
+                "informacaoLocacao");
+
+        const informacaoTipo =
+            document.getElementById(
+                "informacaoTipo");
+
+        const informacaoValor =
+            document.getElementById(
+                "informacaoValor");
+
+
+        const tipoInicial =
+            JSON.parse(
+                '@Html.Raw(
+                                                    tipoInicialJson
+                                                            .Replace("\\", "\\\\")
+                                                            .Replace("'", "\\'")
+                                            )'
+            );
+
+
+        // =====================================================
+        // VALOR CALCULADO PELO CONTROLLER
+        // =====================================================
+
+        const valorInicialController =
+            parseFloat(
+                "@valorInicial");
+
+
+        // =====================================================
+        // ADICIONAR TIPO
+        // =====================================================
+
+        function adicionarOpcaoTipo(
+            valor,
+            texto) {
+
+            const option =
+                document.createElement(
+                    "option");
+
+            option.value =
+                valor;
+
+            option.textContent =
+                texto;
+
+            tipoSelect.appendChild(
+                option);
+        }
+
+
+        // =====================================================
+        // OBTER LOCAÇÃO SELECIONADA
+        // =====================================================
+
+        function obterLocacaoSelecionada() {
+
+            if (!locacaoSelect) {
+                return null;
+            }
+
+            return locacaoSelect.options[
+                locacaoSelect.selectedIndex
+            ];
+        }
+
+
+        // =====================================================
+        // TIPOS PERMITIDOS
+        // =====================================================
+
+        function atualizarTiposPagamento() {
+
+            if (!locacaoSelect ||
+                !tipoSelect) {
+
+                return;
+            }
+
+
+            const option =
+                obterLocacaoSelecionada();
+
+
+            const status =
+                option?.dataset.status ?? "";
+
+
+            const valorAnterior =
+                tipoSelect.value ||
+                tipoInicial;
+
+
+            tipoSelect.innerHTML =
+                "";
+
+
+            adicionarOpcaoTipo(
+                "",
+                "Selecione");
+
+
+            // =============================================
+            // LOCAÇÃO ATIVA
+            // =============================================
+
+            if (status === "1") {
+
+                adicionarOpcaoTipo(
+                    "Multa",
+                    "Multa");
+
+
+                adicionarOpcaoTipo(
+                    "Adicional",
+                    "Adicional");
+
+
+                if (informacaoLocacao) {
+
+                    informacaoLocacao.textContent =
+                        "Locação ativa.";
+                }
+
+
+                if (informacaoTipo) {
+
+                    informacaoTipo.textContent =
+                        "Enquanto a locação estiver ativa, somente Multa ou Adicional podem ser lançados.";
+                }
+            }
+
+
+            // =============================================
+            // LOCAÇÃO FINALIZADA
+            // =============================================
+
+            else if (status === "2") {
+
+                adicionarOpcaoTipo(
+                    "Locação",
+                    "Locação - saldo restante");
+
+
+                adicionarOpcaoTipo(
+                    "Multa",
+                    "Multa");
+
+
+                adicionarOpcaoTipo(
+                    "Adicional",
+                    "Adicional");
+
+
+                if (informacaoLocacao) {
+
+                    informacaoLocacao.textContent =
+                        "Locação finalizada.";
+                }
+
+
+                if (informacaoTipo) {
+
+                    informacaoTipo.textContent =
+                        "A locação finalizada permite cobrança do saldo, multa ou adicional.";
+                }
+            }
+
+
+            // =============================================
+            // NENHUMA LOCAÇÃO
+            // =============================================
+
+            else {
+
+                if (informacaoLocacao) {
+
+                    informacaoLocacao.textContent =
+                        "Selecione a locação que receberá a cobrança.";
+                }
+
+
+                if (informacaoTipo) {
+
+                    informacaoTipo.textContent =
+                        "Selecione primeiro uma locação.";
+                }
+            }
+
+
+            const opcaoAnteriorExiste =
+                Array.from(
+                    tipoSelect.options)
+                    .some(
+                        o =>
+                            o.value ===
+                            valorAnterior);
+
+
+            if (opcaoAnteriorExiste) {
+
+                tipoSelect.value =
+                    valorAnterior;
+            }
+
+
+            atualizarCampoValor();
+        }
+
+
+        // =====================================================
+        // VALOR
+        // =====================================================
+
+        function atualizarCampoValor() {
+
+            if (!tipoSelect ||
+                !valorInput) {
+
+                return;
+            }
+
+
+            const tipo =
+                tipoSelect.value;
+
+
+            // =============================================
+            // SALDO DA LOCAÇÃO
+            // =============================================
+
+            if (tipo === "Locação") {
+
+                let saldo =
+                    valorInicialController;
+
+
+                // -----------------------------------------
+                // Se o controller não enviou valor,
+                // calcular 70% do valor total da locação.
+                // -----------------------------------------
+
+                if (!saldo ||
+                    isNaN(saldo) ||
+                    saldo <= 0) {
+
+                    const option =
+                        obterLocacaoSelecionada();
+
+
+                    const valorTotal =
+                        parseFloat(
+                            option?.dataset.valor
+                            ?? "0");
+
+
+                    if (!isNaN(valorTotal) &&
+                        valorTotal > 0) {
+
+                        saldo =
+                            valorTotal * 0.70;
+                    }
+                }
+
+
+                saldo =
+                    Math.round(
+                        (saldo +
+                            Number.EPSILON)
+                        * 100
+                    ) / 100;
+
+
+                valorInput.value =
+                    saldo.toFixed(2);
+
+
+                valorInput.readOnly =
+                    true;
+
+
+                valorInput.setAttribute(
+                    "min",
+                    "0.01");
+
+
+                if (informacaoValor) {
+
+                    informacaoValor.textContent =
+                        "Saldo restante da locação. A entrada de 30% já foi descontada.";
+                }
+
+
+                return;
+            }
+
+
+            // =============================================
+            // MULTA / ADICIONAL
+            // =============================================
+
+            valorInput.readOnly =
+                false;
+
+
+            valorInput.setAttribute(
+                "min",
+                "0.01");
+
+
+            // Se mudou para multa/adicional,
+            // não manter automaticamente o saldo
+            // da locação.
+
+            if (tipo === "Multa") {
+
+                if (informacaoValor) {
+
+                    informacaoValor.textContent =
+                        "Informe o valor da multa.";
+                }
+
+                return;
+            }
+
+
+            if (tipo === "Adicional") {
+
+                if (informacaoValor) {
+
+                    informacaoValor.textContent =
+                        "Informe o valor da cobrança adicional.";
+                }
+
+                return;
+            }
+
+
+            if (informacaoValor) {
+
+                informacaoValor.textContent =
+                    "Selecione o tipo de pagamento.";
+            }
+        }
+
+
+        // =====================================================
+        // DATA DO PAGAMENTO
+        // =====================================================
+
+        function atualizarCampoData() {
+
+            if (!statusSelect ||
+                !campoData) {
+
+                return;
+            }
+
+
+            if (statusSelect.value === "2") {
+
+                campoData.style.display =
+                    "";
+            }
+            else {
+
+                campoData.style.display =
+                    "none";
+            }
+        }
+
+
+        // =====================================================
+        // EVENTOS
+        // =====================================================
+
+        locacaoSelect?.addEventListener(
+            "change",
+            function() {
+
+                // Ao trocar a locação,
+                // o valor antigo não deve permanecer.
+
+                if (valorInput) {
+
+                    valorInput.value =
+                        "0.00";
+                }
+
+
+                atualizarTiposPagamento();
+            });
+
+
+        tipoSelect?.addEventListener(
+            "change",
+            atualizarCampoValor);
+
+
+        statusSelect?.addEventListener(
+            "change",
+            atualizarCampoData);
+
+
+        // =====================================================
+        // INICIALIZAÇÃO
+        // =====================================================
+
+        atualizarTiposPagamento();
+
+        atualizarCampoValor();
+
+        atualizarCampoData();
+
+    </script>
+}

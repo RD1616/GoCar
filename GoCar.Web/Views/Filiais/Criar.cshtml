@@ -1,0 +1,591 @@
+﻿@model GoCar.Web.Models.FilialViewModel
+
+@{
+    ViewData["Title"] = "Nova Filial";
+}
+
+<style>
+    .branch-create-page {
+        max-width: 1500px;
+        margin: auto;
+        padding: 32px;
+        color: #fff;
+    }
+
+    .branch-create-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .branch-eyebrow {
+        margin-bottom: 4px;
+        color: #a99fb4;
+        font-size: .90rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .branch-title {
+        margin: 0;
+        font-size: 1.85rem;
+        font-weight: 800;
+    }
+
+    .branch-description {
+        margin: 6px 0 0;
+        color: #aaa0b5;
+        font-size: .96rem;
+    }
+
+    .create-btn,
+    .create-btn-primary {
+        min-height: 40px;
+        padding: 0 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: .90rem;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+    .create-btn {
+        border: 1px solid rgba(151,71,255,.24);
+        background: rgba(126,44,255,.06);
+        color: #fff;
+    }
+
+        .create-btn:hover {
+            color: #fff;
+            background: rgba(126,44,255,.12);
+            border-color: rgba(151,71,255,.45);
+        }
+
+    .create-btn-primary {
+        border: 1px solid #8b3dff;
+        background: linear-gradient( 135deg, #7c2cff, #9b4dff );
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(126,44,255,.18);
+    }
+
+        .create-btn-primary:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+    .branch-intro {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 16px;
+        padding: 22px 24px;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: radial-gradient( circle at 90% 20%, rgba(126,44,255,.13), transparent 32% ), linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+        .branch-intro small {
+            display: block;
+            margin-bottom: 4px;
+            color: #b99adf;
+            font-size: .82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        .branch-intro h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .branch-intro p {
+            margin: 6px 0 0;
+            color: #aaa0b5;
+            font-size: .90rem;
+            line-height: 1.5;
+        }
+
+    .branch-intro-icon {
+        width: 55px;
+        height: 55px;
+        flex: 0 0 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(151,71,255,.2);
+        border-radius: 12px;
+        background: rgba(126,44,255,.08);
+        color: #b76cff;
+        font-size: 1.5rem;
+    }
+
+    .branch-form-card {
+        overflow: hidden;
+        border: 1px solid rgba(151,71,255,.16);
+        border-radius: 11px;
+        background: linear-gradient( 145deg, rgba(21,11,37,.98), rgba(13,7,24,.98) );
+    }
+
+    .branch-section {
+        padding: 22px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+    }
+
+    .section-heading {
+        margin-bottom: 18px;
+    }
+
+        .section-heading small {
+            display: block;
+            margin-bottom: 3px;
+            color: #a99fb4;
+            font-size: .82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .55px;
+        }
+
+        .section-heading h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+    .branch-grid {
+        display: grid;
+        grid-template-columns: repeat(12,minmax(0,1fr));
+        gap: 15px;
+    }
+
+    .col-4x {
+        grid-column: span 4;
+    }
+
+    .col-6x {
+        grid-column: span 6;
+    }
+
+    .col-8x {
+        grid-column: span 8;
+    }
+
+    .field label {
+        display: block;
+        margin-bottom: 6px;
+        color: #c3bacb;
+        font-size: .88rem;
+        font-weight: 700;
+    }
+
+    .branch-input {
+        width: 100%;
+        min-height: 41px;
+        padding: 9px 11px;
+        border: 1px solid rgba(151,71,255,.17);
+        border-radius: 7px;
+        outline: none;
+        background: rgba(255,255,255,.025);
+        color: #ded8e5;
+        font-size: .90rem;
+        transition: .15s ease;
+    }
+
+        .branch-input:focus {
+            border-color: rgba(151,71,255,.65);
+            background: rgba(126,44,255,.045);
+            box-shadow: 0 0 0 3px rgba(126,44,255,.07);
+        }
+
+        .branch-input::placeholder {
+            color: #756c7e;
+        }
+
+    .validation-text {
+        display: block;
+        margin-top: 5px;
+        color: #ff718d;
+        font-size: .82rem;
+    }
+
+    .validation-summary-errors {
+        margin-bottom: 18px;
+        padding: 12px 14px;
+        border: 1px solid rgba(244,63,94,.22);
+        border-radius: 8px;
+        background: rgba(244,63,94,.07);
+        color: #ff91a7;
+        font-size: .86rem;
+    }
+
+        .validation-summary-errors ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+    .branch-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 18px 22px;
+        background: rgba(6,3,11,.22);
+    }
+
+        .branch-footer button {
+            font-family: inherit;
+        }
+
+    @@media (max-width: 750px) {
+        .branch-create-page {
+            padding: 20px 15px;
+        }
+
+        .branch-create-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+            .branch-create-header .create-btn {
+                width: 100%;
+            }
+
+        .col-4x,
+        .col-6x,
+        .col-8x {
+            grid-column: span 12;
+        }
+
+        .branch-intro-icon {
+            display: none;
+        }
+
+        .branch-footer {
+            flex-direction: column-reverse;
+        }
+
+            .branch-footer a,
+            .branch-footer button {
+                width: 100%;
+            }
+    }
+</style>
+
+<div class="branch-create-page">
+
+    <div class="branch-create-header">
+
+        <div>
+
+            <div class="branch-eyebrow">
+                Gestão de unidades
+            </div>
+
+            <h1 class="branch-title">
+                Nova Filial
+            </h1>
+
+            <p class="branch-description">
+                Cadastre uma nova unidade da GoCar.
+            </p>
+
+        </div>
+
+        <a asp-controller="Filiais"
+           asp-action="Index"
+           class="create-btn">
+
+            ← Voltar
+
+        </a>
+
+    </div>
+
+
+    <div class="branch-intro">
+
+        <div>
+
+            <small>
+                Nova unidade
+            </small>
+
+            <h2>
+                Informações da filial
+            </h2>
+
+            <p>
+                Preencha os dados cadastrais, contato e endereço da nova unidade.
+            </p>
+
+        </div>
+
+        <div class="branch-intro-icon">
+            +
+        </div>
+
+    </div>
+
+
+    <div class="branch-form-card">
+
+        <form asp-controller="Filiais"
+              asp-action="Criar"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div class="branch-section">
+
+                <div asp-validation-summary="ModelOnly">
+                </div>
+
+                <div class="section-heading">
+
+                    <small>
+                        Cadastro
+                    </small>
+
+                    <h3>
+                        Dados da filial
+                    </h3>
+
+                </div>
+
+
+                <div class="branch-grid">
+
+                    <div class="field col-8x">
+
+                        <label asp-for="Nome">
+                            Nome da Filial
+                        </label>
+
+                        <input asp-for="Nome"
+                               class="branch-input"
+                               placeholder="Ex.: GoCar Guarulhos" />
+
+                        <span asp-validation-for="Nome"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+
+                    <div class="field col-4x">
+
+                        <label asp-for="CNPJ">
+                            CNPJ
+                        </label>
+
+                        <input asp-for="CNPJ"
+                               class="branch-input"
+                               placeholder="00.000.000/0000-00" />
+
+                        <span asp-validation-for="CNPJ"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+
+                    <div class="field col-6x">
+
+                        <label asp-for="Telefone">
+                            Telefone
+                        </label>
+
+                        <input asp-for="Telefone"
+                               class="branch-input"
+                               placeholder="(11) 0000-0000" />
+
+                        <span asp-validation-for="Telefone"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+
+                    <div class="field col-6x">
+
+                        <label asp-for="Email">
+                            E-mail
+                        </label>
+
+                        <input asp-for="Email"
+                               type="email"
+                               class="branch-input"
+                               placeholder="filial@gocar.com" />
+
+                        <span asp-validation-for="Email"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="branch-section">
+
+                <div class="section-heading">
+
+                    <small>
+                        Localização
+                    </small>
+
+                    <h3>
+                        Endereço da unidade
+                    </h3>
+
+                </div>
+
+
+                <div class="branch-grid">
+
+                    <div class="field col-8x">
+
+                        <label asp-for="Endereco">
+                            Endereço
+                        </label>
+
+                        <input asp-for="Endereco"
+                               class="branch-input"
+                               placeholder="Rua, avenida..." />
+
+                        <span asp-validation-for="Endereco"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+
+                    <div class="field col-4x">
+
+                        <label asp-for="Numero">
+                            Número
+                        </label>
+
+                        <input asp-for="Numero"
+                               class="branch-input"
+                               placeholder="123" />
+
+                        <span asp-validation-for="Numero"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+
+                    <div class="field col-6x">
+
+                        <label asp-for="Bairro">
+                            Bairro
+                        </label>
+
+                        <input asp-for="Bairro"
+                               class="branch-input" />
+
+                        <span asp-validation-for="Bairro"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+
+                    <div class="field col-6x">
+
+                        <label asp-for="Cidade">
+                            Cidade
+                        </label>
+
+                        <input asp-for="Cidade"
+                               class="branch-input" />
+
+                        <span asp-validation-for="Cidade"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+
+                    <div class="field col-4x">
+
+                        <label asp-for="Estado">
+                            Estado
+                        </label>
+
+                        <input asp-for="Estado"
+                               class="branch-input"
+                               maxlength="2"
+                               placeholder="SP" />
+
+                        <span asp-validation-for="Estado"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+
+                    <div class="field col-4x">
+
+                        <label asp-for="CEP">
+                            CEP
+                        </label>
+
+                        <input asp-for="CEP"
+                               class="branch-input"
+                               placeholder="00000-000" />
+
+                        <span asp-validation-for="CEP"
+                              class="validation-text">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="branch-footer">
+
+                <a asp-controller="Filiais"
+                   asp-action="Index"
+                   class="create-btn">
+
+                    Cancelar
+
+                </a>
+
+                <button type="submit"
+                        class="create-btn-primary">
+
+                    Cadastrar Filial
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

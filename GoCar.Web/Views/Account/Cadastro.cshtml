@@ -1,0 +1,1341 @@
+﻿@model GoCar.Web.Models.CadastroViewModel
+
+@{
+    ViewData["Title"] = "Criar conta";
+}
+
+<section class="cadastro-section">
+
+    <div class="container">
+
+        <div class="cadastro-wrapper">
+
+            <div class="cadastro-card">
+
+                <!-- =========================================
+                     CABEÇALHO
+                ========================================== -->
+
+                <div class="cadastro-header">
+
+                    <div class="cadastro-brand">
+                        Go<span>Car</span>
+                    </div>
+
+                    <span class="section-badge">
+                        NOVO CLIENTE
+                    </span>
+
+                    <h1>
+                        Crie sua conta
+                    </h1>
+
+                    <p>
+                        Preencha seus dados para começar a reservar
+                        seu próximo veículo com a GoCar.
+                    </p>
+
+                </div>
+
+                <!-- =========================================
+                     ERROS
+                ========================================== -->
+
+                <div asp-validation-summary="ModelOnly"
+                     class="cadastro-validation"
+                     role="alert">
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.MensagemErro))
+                {
+                    <div class="cadastro-alert">
+
+                        <span class="cadastro-alert-icon">
+                            !
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Não foi possível criar sua conta
+                            </strong>
+
+                            <span>
+                                @Model.MensagemErro
+                            </span>
+
+                        </div>
+
+                    </div>
+                }
+
+                <!-- =========================================
+                     FORMULÁRIO
+                ========================================== -->
+
+                <form asp-controller="Account"
+                      asp-action="Cadastro"
+                      method="post"
+                      id="cadastroForm">
+
+                    @Html.AntiForgeryToken()
+
+                    <!-- =====================================
+                         01 - CONTA
+                    ====================================== -->
+
+                    <div class="cadastro-bloco">
+
+                        <div class="cadastro-bloco-header">
+
+                            <span class="cadastro-numero">
+                                01
+                            </span>
+
+                            <div>
+
+                                <h2>
+                                    Dados da conta
+                                </h2>
+
+                                <p>
+                                    Informações utilizadas para acessar
+                                    sua conta GoCar.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="row g-4">
+
+                            <!-- NOME -->
+
+                            <div class="col-12">
+
+                                <label asp-for="Nome"
+                                       class="form-label">
+                                    Nome completo
+                                </label>
+
+                                <div class="cadastro-input-wrapper">
+
+                                    <span class="cadastro-input-icon">
+                                        👤
+                                    </span>
+
+                                    <input asp-for="Nome"
+                                           class="form-control cadastro-input"
+                                           placeholder="Digite seu nome completo"
+                                           autocomplete="name"
+                                           required />
+
+                                </div>
+
+                                <span asp-validation-for="Nome"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- EMAIL -->
+
+                            <div class="col-md-6">
+
+                                <label asp-for="Email"
+                                       class="form-label">
+                                    E-mail
+                                </label>
+
+                                <div class="cadastro-input-wrapper">
+
+                                    <span class="cadastro-input-icon">
+                                        ✉
+                                    </span>
+
+                                    <input asp-for="Email"
+                                           type="email"
+                                           class="form-control cadastro-input"
+                                           placeholder="seuemail@exemplo.com"
+                                           autocomplete="email"
+                                           required />
+
+                                </div>
+
+                                <span asp-validation-for="Email"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- TELEFONE -->
+
+                            <div class="col-md-6">
+
+                                <label asp-for="Telefone"
+                                       class="form-label">
+                                    Telefone
+                                </label>
+
+                                <div class="cadastro-input-wrapper">
+
+                                    <span class="cadastro-input-icon">
+                                        ☎
+                                    </span>
+
+                                    <input asp-for="Telefone"
+                                           class="form-control cadastro-input"
+                                           placeholder="(11) 99999-9999"
+                                           autocomplete="tel"
+                                           required />
+
+                                </div>
+
+                                <span asp-validation-for="Telefone"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- SENHA -->
+
+                            <div class="col-md-6">
+
+                                <label asp-for="Senha"
+                                       class="form-label">
+                                    Senha
+                                </label>
+
+                                <div class="cadastro-input-wrapper">
+
+                                    <span class="cadastro-input-icon">
+                                        🔒
+                                    </span>
+
+                                    <input asp-for="Senha"
+                                           id="senha"
+                                           type="password"
+                                           class="form-control cadastro-input cadastro-input-password"
+                                           placeholder="Mínimo de 6 caracteres"
+                                           autocomplete="new-password"
+                                           required />
+
+                                    <button type="button"
+                                            class="cadastro-password-toggle"
+                                            id="toggleSenha"
+                                            aria-label="Mostrar senha">
+
+                                        ◉
+
+                                    </button>
+
+                                </div>
+
+                                <span asp-validation-for="Senha"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- CONFIRMAR SENHA -->
+
+                            <div class="col-md-6">
+
+                                <label asp-for="ConfirmarSenha"
+                                       class="form-label">
+                                    Confirmar senha
+                                </label>
+
+                                <div class="cadastro-input-wrapper">
+
+                                    <span class="cadastro-input-icon">
+                                        🔒
+                                    </span>
+
+                                    <input asp-for="ConfirmarSenha"
+                                           id="confirmarSenha"
+                                           type="password"
+                                           class="form-control cadastro-input cadastro-input-password"
+                                           placeholder="Digite a senha novamente"
+                                           autocomplete="new-password"
+                                           required />
+
+                                    <button type="button"
+                                            class="cadastro-password-toggle"
+                                            id="toggleConfirmarSenha"
+                                            aria-label="Mostrar confirmação da senha">
+
+                                        ◉
+
+                                    </button>
+
+                                </div>
+
+                                <span asp-validation-for="ConfirmarSenha"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- =====================================
+                         02 - DADOS PESSOAIS
+                    ====================================== -->
+
+                    <div class="cadastro-bloco">
+
+                        <div class="cadastro-bloco-header">
+
+                            <span class="cadastro-numero">
+                                02
+                            </span>
+
+                            <div>
+
+                                <h2>
+                                    Dados pessoais
+                                </h2>
+
+                                <p>
+                                    Precisamos dessas informações para
+                                    identificar você durante as reservas.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="row g-4">
+
+                            <!-- CPF -->
+
+                            <div class="col-md-6">
+
+                                <label asp-for="CPF"
+                                       class="form-label">
+                                    CPF
+                                </label>
+
+                                <div class="cadastro-input-wrapper">
+
+                                    <span class="cadastro-input-icon">
+                                        #
+                                    </span>
+
+                                    <input asp-for="CPF"
+                                           class="form-control cadastro-input"
+                                           placeholder="000.000.000-00"
+                                           inputmode="numeric"
+                                           required />
+
+                                </div>
+
+                                <span asp-validation-for="CPF"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- NASCIMENTO -->
+
+                            <div class="col-md-6">
+
+                                <label asp-for="DataNascimento"
+                                       class="form-label">
+                                    Data de nascimento
+                                </label>
+
+                                <input asp-for="DataNascimento"
+                                       type="date"
+                                       class="form-control cadastro-input cadastro-date"
+                                       required />
+
+                                <span asp-validation-for="DataNascimento"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- =====================================
+                         03 - CNH
+                    ====================================== -->
+
+                    <div class="cadastro-bloco">
+
+                        <div class="cadastro-bloco-header">
+
+                            <span class="cadastro-numero">
+                                03
+                            </span>
+
+                            <div>
+
+                                <h2>
+                                    Carteira de habilitação
+                                </h2>
+
+                                <p>
+                                    Dados da CNH necessários para realizar
+                                    uma locação de veículo.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="row g-4">
+
+                            <!-- CNH -->
+
+                            <div class="col-md-6">
+
+                                <label asp-for="CNH"
+                                       class="form-label">
+                                    Número da CNH
+                                </label>
+
+                                <div class="cadastro-input-wrapper">
+
+                                    <span class="cadastro-input-icon">
+                                        ▣
+                                    </span>
+
+                                    <input asp-for="CNH"
+                                           class="form-control cadastro-input"
+                                           placeholder="Digite o número da CNH"
+                                           inputmode="numeric"
+                                           required />
+
+                                </div>
+
+                                <span asp-validation-for="CNH"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- CATEGORIA -->
+
+                            <div class="col-md-3">
+
+                                <label asp-for="CategoriaCNH"
+                                       class="form-label">
+                                    Categoria
+                                </label>
+
+                                <select asp-for="CategoriaCNH"
+                                        class="form-select cadastro-input"
+                                        required>
+
+                                    <option value="">
+                                        Selecione
+                                    </option>
+
+                                    <option value="A">
+                                        A
+                                    </option>
+
+                                    <option value="B">
+                                        B
+                                    </option>
+
+                                    <option value="AB">
+                                        AB
+                                    </option>
+
+                                    <option value="C">
+                                        C
+                                    </option>
+
+                                    <option value="D">
+                                        D
+                                    </option>
+
+                                    <option value="E">
+                                        E
+                                    </option>
+
+                                </select>
+
+                                <span asp-validation-for="CategoriaCNH"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- VALIDADE -->
+
+                            <div class="col-md-3">
+
+                                <label asp-for="DataValidadeCNH"
+                                       class="form-label">
+                                    Validade
+                                </label>
+
+                                <input asp-for="DataValidadeCNH"
+                                       type="date"
+                                       class="form-control cadastro-input cadastro-date"
+                                       required />
+
+                                <span asp-validation-for="DataValidadeCNH"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="cadastro-info">
+
+                            <span class="cadastro-info-icon">
+                                ✓
+                            </span>
+
+                            <span>
+                                A CNH deve estar válida no período da locação.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- =====================================
+                         04 - ENDEREÇO
+                    ====================================== -->
+
+                    <div class="cadastro-bloco">
+
+                        <div class="cadastro-bloco-header">
+
+                            <span class="cadastro-numero">
+                                04
+                            </span>
+
+                            <div>
+
+                                <h2>
+                                    Endereço
+                                </h2>
+
+                                <p>
+                                    Informe seu endereço para completar
+                                    seu cadastro.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="row g-4">
+
+                            <!-- CEP -->
+
+                            <div class="col-md-4">
+
+                                <label asp-for="CEP"
+                                       class="form-label">
+                                    CEP
+                                </label>
+
+                                <input asp-for="CEP"
+                                       class="form-control cadastro-input"
+                                       placeholder="00000-000"
+                                       inputmode="numeric"
+                                       autocomplete="postal-code"
+                                       required />
+
+                                <span asp-validation-for="CEP"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- ESTADO -->
+
+                            <div class="col-md-4">
+
+                                <label asp-for="Estado"
+                                       class="form-label">
+                                    Estado
+                                </label>
+
+                                <select asp-for="Estado"
+                                        class="form-select cadastro-input"
+                                        autocomplete="address-level1"
+                                        required>
+
+                                    <option value="">
+                                        Selecione
+                                    </option>
+
+                                    <option value="AC">Acre</option>
+                                    <option value="AL">Alagoas</option>
+                                    <option value="AP">Amapá</option>
+                                    <option value="AM">Amazonas</option>
+                                    <option value="BA">Bahia</option>
+                                    <option value="CE">Ceará</option>
+                                    <option value="DF">Distrito Federal</option>
+                                    <option value="ES">Espírito Santo</option>
+                                    <option value="GO">Goiás</option>
+                                    <option value="MA">Maranhão</option>
+                                    <option value="MT">Mato Grosso</option>
+                                    <option value="MS">Mato Grosso do Sul</option>
+                                    <option value="MG">Minas Gerais</option>
+                                    <option value="PA">Pará</option>
+                                    <option value="PB">Paraíba</option>
+                                    <option value="PR">Paraná</option>
+                                    <option value="PE">Pernambuco</option>
+                                    <option value="PI">Piauí</option>
+                                    <option value="RJ">Rio de Janeiro</option>
+                                    <option value="RN">Rio Grande do Norte</option>
+                                    <option value="RS">Rio Grande do Sul</option>
+                                    <option value="RO">Rondônia</option>
+                                    <option value="RR">Roraima</option>
+                                    <option value="SC">Santa Catarina</option>
+                                    <option value="SP">São Paulo</option>
+                                    <option value="SE">Sergipe</option>
+                                    <option value="TO">Tocantins</option>
+
+                                </select>
+
+                                <span asp-validation-for="Estado"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- CIDADE -->
+
+                            <div class="col-md-4">
+
+                                <label asp-for="Cidade"
+                                       class="form-label">
+                                    Cidade
+                                </label>
+
+                                <input asp-for="Cidade"
+                                       class="form-control cadastro-input"
+                                       placeholder="Digite sua cidade"
+                                       autocomplete="address-level2"
+                                       required />
+
+                                <span asp-validation-for="Cidade"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- ENDEREÇO -->
+
+                            <div class="col-md-8">
+
+                                <label asp-for="Endereco"
+                                       class="form-label">
+                                    Endereço
+                                </label>
+
+                                <input asp-for="Endereco"
+                                       class="form-control cadastro-input"
+                                       placeholder="Rua, avenida, etc."
+                                       autocomplete="street-address"
+                                       required />
+
+                                <span asp-validation-for="Endereco"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- NÚMERO -->
+
+                            <div class="col-md-4">
+
+                                <label asp-for="Numero"
+                                       class="form-label">
+                                    Número
+                                </label>
+
+                                <input asp-for="Numero"
+                                       class="form-control cadastro-input"
+                                       placeholder="Número"
+                                       required />
+
+                                <span asp-validation-for="Numero"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <!-- BAIRRO -->
+
+                            <div class="col-12">
+
+                                <label asp-for="Bairro"
+                                       class="form-label">
+                                    Bairro
+                                </label>
+
+                                <input asp-for="Bairro"
+                                       class="form-control cadastro-input"
+                                       placeholder="Digite seu bairro"
+                                       autocomplete="address-line2"
+                                       required />
+
+                                <span asp-validation-for="Bairro"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- =====================================
+                         AÇÕES
+                    ====================================== -->
+
+                    <div class="cadastro-acoes">
+
+                        <a asp-controller="Account"
+                           asp-action="Login"
+                           class="cadastro-back">
+
+                            ← Já tenho uma conta
+
+                        </a>
+
+                        <button type="submit"
+                                class="cadastro-submit"
+                                id="btnCadastro">
+
+                            <span>
+                                Criar minha conta
+                            </span>
+
+                            <span class="cadastro-submit-arrow">
+                                →
+                            </span>
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+                <!-- =========================================
+                     RODAPÉ
+                ========================================== -->
+
+                <div class="cadastro-security">
+
+                    <span class="cadastro-security-icon">
+                        ✓
+                    </span>
+
+                    Seus dados são utilizados apenas para
+                    identificação e funcionamento da sua conta.
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<style>
+
+    /* =========================================
+       CADASTRO
+    ========================================= */
+
+    .cadastro-section {
+        min-height: calc(100vh - 90px);
+        padding: 65px 15px 90px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cadastro-section::before {
+        content: "";
+        position: absolute;
+        width: 650px;
+        height: 650px;
+        top: -300px;
+        right: -250px;
+        background: radial-gradient(
+            circle,
+            rgba(151, 71, 255, .14),
+            transparent 70%
+        );
+        pointer-events: none;
+    }
+
+    .cadastro-section::after {
+        content: "";
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        bottom: -280px;
+        left: -220px;
+        background: radial-gradient(
+            circle,
+            rgba(124, 44, 255, .10),
+            transparent 70%
+        );
+        pointer-events: none;
+    }
+
+    .cadastro-wrapper {
+        width: 100%;
+        max-width: 1000px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 2;
+    }
+
+    .cadastro-card {
+        padding: 45px;
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 24px;
+        background:
+            linear-gradient(
+                145deg,
+                rgba(27, 16, 43, .96),
+                rgba(12, 7, 21, .98)
+            );
+        box-shadow:
+            0 30px 90px rgba(0, 0, 0, .35),
+            inset 0 1px 0 rgba(255, 255, 255, .04);
+        backdrop-filter: blur(18px);
+    }
+
+    /* =========================================
+       CABEÇALHO
+    ========================================= */
+
+    .cadastro-header {
+        text-align: center;
+        margin-bottom: 42px;
+    }
+
+    .cadastro-brand {
+        margin-bottom: 20px;
+        color: #ffffff;
+        font-size: 1.9rem;
+        font-weight: 900;
+        font-style: italic;
+        letter-spacing: -1.5px;
+    }
+
+    .cadastro-brand span {
+        color: #9747ff;
+    }
+
+    .cadastro-header .section-badge {
+        display: inline-block;
+        margin-bottom: 14px;
+    }
+
+    .cadastro-header h1 {
+        margin-bottom: 10px;
+        color: #ffffff;
+        font-size: 2.15rem;
+        font-weight: 800;
+        letter-spacing: -.8px;
+    }
+
+    .cadastro-header p {
+        max-width: 650px;
+        margin: 0 auto;
+        color: rgba(255, 255, 255, .55);
+        font-size: .94rem;
+        line-height: 1.7;
+    }
+
+    /* =========================================
+       ERROS
+    ========================================= */
+
+    .cadastro-validation {
+        margin-bottom: 25px;
+        color: #ff8792;
+        font-size: .8rem;
+    }
+
+    .cadastro-validation:empty {
+        display: none;
+    }
+
+    .cadastro-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 25px;
+        padding: 14px 16px;
+        border: 1px solid rgba(220, 53, 69, .25);
+        border-radius: 13px;
+        background: rgba(220, 53, 69, .08);
+    }
+
+    .cadastro-alert-icon {
+        width: 25px;
+        height: 25px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(220, 53, 69, .18);
+        color: #ff8792;
+        font-weight: 800;
+    }
+
+    .cadastro-alert strong,
+    .cadastro-alert span {
+        display: block;
+    }
+
+    .cadastro-alert strong {
+        margin-bottom: 3px;
+        color: #ffffff;
+        font-size: .82rem;
+    }
+
+    .cadastro-alert span {
+        color: rgba(255, 255, 255, .62);
+        font-size: .76rem;
+        line-height: 1.5;
+    }
+
+    /* =========================================
+       BLOCOS
+    ========================================= */
+
+    .cadastro-bloco {
+        padding: 34px 0;
+        border-top: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .cadastro-bloco:first-of-type {
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .cadastro-bloco-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 26px;
+    }
+
+    .cadastro-numero {
+        width: 43px;
+        height: 43px;
+        min-width: 43px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(151, 71, 255, .25);
+        border-radius: 11px;
+        background: rgba(151, 71, 255, .10);
+        color: #b982ff;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .cadastro-bloco-header h2 {
+        margin: 1px 0 4px;
+        color: #ffffff;
+        font-size: 1.15rem;
+        font-weight: 750;
+    }
+
+    .cadastro-bloco-header p {
+        margin: 0;
+        color: rgba(255, 255, 255, .43);
+        font-size: .77rem;
+        line-height: 1.5;
+    }
+
+    /* =========================================
+       CAMPOS
+    ========================================= */
+
+    .cadastro-bloco .form-label {
+        margin-bottom: 8px;
+        color: rgba(255, 255, 255, .82);
+        font-size: .81rem;
+        font-weight: 700;
+    }
+
+    .cadastro-input-wrapper {
+        position: relative;
+    }
+
+    .cadastro-input {
+        min-height: 50px;
+        border: 1px solid rgba(255, 255, 255, .09);
+        border-radius: 11px;
+        background: rgba(255, 255, 255, .035);
+        color: #ffffff;
+        box-shadow: none !important;
+        transition: .2s ease;
+    }
+
+    .cadastro-input-wrapper .cadastro-input {
+        padding-left: 44px;
+    }
+
+    .cadastro-input::placeholder {
+        color: rgba(255, 255, 255, .28);
+    }
+
+    .cadastro-input:focus {
+        border-color: rgba(151, 71, 255, .65);
+        background: rgba(255, 255, 255, .055);
+        color: #ffffff;
+    }
+
+    .cadastro-input-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #806e98;
+        font-size: .85rem;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .cadastro-date {
+        color-scheme: dark;
+    }
+
+    select.cadastro-input {
+        padding-left: 13px;
+    }
+
+    .cadastro-input-password {
+        padding-right: 48px !important;
+    }
+
+    .cadastro-password-toggle {
+        position: absolute;
+        top: 50%;
+        right: 9px;
+        width: 35px;
+        height: 35px;
+        transform: translateY(-50%);
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: #80758c;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+    .cadastro-password-toggle:hover {
+        background: rgba(255, 255, 255, .06);
+        color: #ffffff;
+    }
+
+    .text-danger {
+        display: block;
+        margin-top: 6px;
+        color: #ff8792 !important;
+        font-size: .72rem;
+    }
+
+    /* =========================================
+       INFORMAÇÃO
+    ========================================= */
+
+    .cadastro-info {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 22px;
+        padding: 12px 14px;
+        border: 1px solid rgba(25, 135, 84, .18);
+        border-radius: 10px;
+        background: rgba(25, 135, 84, .06);
+        color: rgba(255, 255, 255, .48);
+        font-size: .72rem;
+    }
+
+    .cadastro-info-icon {
+        width: 19px;
+        height: 19px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: rgba(25, 135, 84, .18);
+        color: #5fd39b;
+        font-size: .65rem;
+        font-weight: 800;
+    }
+
+    /* =========================================
+       AÇÕES
+    ========================================= */
+
+    .cadastro-acoes {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding-top: 32px;
+        border-top: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .cadastro-back {
+        color: rgba(255, 255, 255, .55);
+        text-decoration: none;
+        font-size: .8rem;
+        font-weight: 650;
+        transition: .2s ease;
+    }
+
+    .cadastro-back:hover {
+        color: #ffffff;
+    }
+
+    .cadastro-submit {
+        min-height: 52px;
+        min-width: 210px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 0 22px;
+        border: 0;
+        border-radius: 11px;
+        background: linear-gradient(
+            135deg,
+            #7c2cff,
+            #9747ff
+        );
+        color: #ffffff;
+        font-size: .86rem;
+        font-weight: 800;
+        box-shadow: 0 12px 30px rgba(124, 44, 255, .22);
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+    .cadastro-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 35px rgba(124, 44, 255, .32);
+    }
+
+    .cadastro-submit-arrow {
+        font-size: 1.1rem;
+        transition: .2s ease;
+    }
+
+    .cadastro-submit:hover .cadastro-submit-arrow {
+        transform: translateX(4px);
+    }
+
+    .cadastro-submit:disabled {
+        opacity: .65;
+        cursor: wait;
+        transform: none;
+    }
+
+    /* =========================================
+       SEGURANÇA
+    ========================================= */
+
+    .cadastro-security {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 25px;
+        color: rgba(255, 255, 255, .32);
+        font-size: .68rem;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    .cadastro-security-icon {
+        width: 17px;
+        height: 17px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: rgba(25, 135, 84, .18);
+        color: #5fd39b;
+        font-size: .62rem;
+        font-weight: 800;
+    }
+
+    /* =========================================
+       RESPONSIVO
+    ========================================= */
+
+    @@media (max-width: 768px) {
+
+        .cadastro-section {
+            padding: 40px 15px 60px;
+        }
+
+        .cadastro-card {
+            padding: 30px 20px;
+            border-radius: 18px;
+        }
+
+        .cadastro-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .cadastro-bloco {
+            padding: 28px 0;
+        }
+
+        .cadastro-acoes {
+            flex-direction: column-reverse;
+            align-items: stretch;
+        }
+
+        .cadastro-submit {
+            width: 100%;
+        }
+
+        .cadastro-back {
+            text-align: center;
+        }
+    }
+
+    @@media (max-width: 480px) {
+
+        .cadastro-card {
+            padding: 25px 16px;
+        }
+
+        .cadastro-bloco-header {
+            gap: 11px;
+        }
+
+        .cadastro-numero {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+        }
+
+        .cadastro-bloco-header h2 {
+            font-size: 1rem;
+        }
+
+        .cadastro-bloco-header p {
+            font-size: .71rem;
+        }
+
+    }
+
+</style>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                function configurarSenha(
+                    inputId,
+                    buttonId
+                ) {
+
+                    const input =
+                        document.getElementById(inputId);
+
+                    const button =
+                        document.getElementById(buttonId);
+
+                    if (!input || !button) {
+                        return;
+                    }
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            const mostrando =
+                                input.type === "text";
+
+                            input.type =
+                                mostrando
+                                    ? "password"
+                                    : "text";
+
+                            button.setAttribute(
+                                "aria-label",
+                                mostrando
+                                    ? "Mostrar senha"
+                                    : "Ocultar senha"
+                            );
+
+                        }
+                    );
+                }
+
+                configurarSenha(
+                    "senha",
+                    "toggleSenha"
+                );
+
+                configurarSenha(
+                    "confirmarSenha",
+                    "toggleConfirmarSenha"
+                );
+
+                const form =
+                    document.getElementById("cadastroForm");
+
+                const button =
+                    document.getElementById("btnCadastro");
+
+                if (form && button) {
+
+                    form.addEventListener(
+                        "submit",
+                        function () {
+
+                            if (!form.checkValidity()) {
+                                return;
+                            }
+
+                            button.disabled = true;
+
+                            button.innerHTML =
+                                "<span>Criando sua conta...</span>";
+
+                        }
+                    );
+                }
+
+            }
+        );
+
+    </script>
+}
