@@ -15,5 +15,9 @@ namespace GoCar.Application.Interfaces
             AtualizarCategoriaDto dto);
 
         Task<bool> ExcluirAsync(int id);
+
+        Task<bool> AtivarAsync(int id);
+
+        Task<bool> ExcluirPermanentementeAsync(int id);
     }
 }

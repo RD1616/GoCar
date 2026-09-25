@@ -13,5 +13,7 @@ namespace GoCar.Application.Interfaces
         Task<bool> AtualizarAsync(Veiculo veiculo);
 
         Task<bool> ExcluirAsync(int id);
+
+        Task<bool> ExcluirPermanentementeAsync(int id);
     }
 }

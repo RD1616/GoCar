@@ -22,7 +22,6 @@ namespace GoCar.API.Controllers
         // LISTAR TODOS
         // =====================================================
 
-        // Consulta pública de veículos.
         [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> ListarTodos()
@@ -37,7 +36,6 @@ namespace GoCar.API.Controllers
         // OBTER POR ID
         // =====================================================
 
-        // Consulta pública de um veículo específico.
         [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> ObterPorId(
@@ -62,8 +60,6 @@ namespace GoCar.API.Controllers
         // CRIAR
         // =====================================================
 
-        // Somente funcionários podem
-        // cadastrar veículos.
         [HttpPost]
         [Authorize(
             Roles = "Administrador,Gerente,Atendente")]
@@ -83,8 +79,6 @@ namespace GoCar.API.Controllers
         // ATUALIZAR
         // =====================================================
 
-        // Somente funcionários podem
-        // alterar veículos.
         [HttpPut("{id}")]
         [Authorize(
             Roles = "Administrador,Gerente,Atendente")]
@@ -113,8 +107,6 @@ namespace GoCar.API.Controllers
         // DESATIVAR
         // =====================================================
 
-        // Somente funcionários podem
-        // excluir/desativar veículos.
         [HttpDelete("{id}")]
         [Authorize(
             Roles = "Administrador,Gerente,Atendente")]
@@ -141,8 +133,7 @@ namespace GoCar.API.Controllers
             {
                 return BadRequest(new
                 {
-                    mensagem =
-                        ex.Message
+                    mensagem = ex.Message
                 });
             }
         }
@@ -151,8 +142,6 @@ namespace GoCar.API.Controllers
         // ATIVAR
         // =====================================================
 
-        // Somente funcionários podem
-        // reativar veículos.
         [HttpPut("{id}/ativar")]
         [Authorize(
             Roles = "Administrador,Gerente,Atendente")]
@@ -172,6 +161,42 @@ namespace GoCar.API.Controllers
             }
 
             return NoContent();
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        [HttpDelete("{id}/permanente")]
+        [Authorize(
+            Roles = "Administrador,Gerente,Atendente")]
+        public async Task<IActionResult>
+            ExcluirPermanentemente(int id)
+        {
+            try
+            {
+                var excluido =
+                    await _service
+                        .ExcluirPermanentementeAsync(id);
+
+                if (!excluido)
+                {
+                    return NotFound(new
+                    {
+                        mensagem =
+                            "Veículo não encontrado."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    mensagem = ex.Message
+                });
+            }
         }
     }
 }

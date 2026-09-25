@@ -33,8 +33,17 @@ namespace GoCar.Desktop
 
         public bool VeiculoCadastrado { get; private set; }
 
-        public NovoVeiculoForm()
+        private readonly int? _veiculoId;
+        private bool _isAtivoAtual = true;
+
+        public NovoVeiculoForm() : this(null)
         {
+        }
+
+        public NovoVeiculoForm(int? veiculoId)
+        {
+            _veiculoId = veiculoId;
+
             ConfigurarFormulario();
             CriarInterface();
 
@@ -42,12 +51,15 @@ namespace GoCar.Desktop
             {
                 await CarregarCategorias();
                 await CarregarFiliais();
+
+                if (_veiculoId.HasValue)
+                    await CarregarVeiculoParaEdicao();
             };
         }
 
         private void ConfigurarFormulario()
         {
-            Text = "GoCar - Novo Veículo";
+            Text = _veiculoId.HasValue ? "GoCar - Editar Veículo" : "GoCar - Novo Veículo";
 
             Size = new Size(760, 760);
             MinimumSize = new Size(760, 760);
@@ -68,7 +80,7 @@ namespace GoCar.Desktop
         {
             var titulo = new Label
             {
-                Text = "Novo Veículo",
+                Text = _veiculoId.HasValue ? "Editar Veículo" : "Novo Veículo",
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 22F, FontStyle.Bold),
                 AutoSize = true,
@@ -77,7 +89,7 @@ namespace GoCar.Desktop
 
             var subtitulo = new Label
             {
-                Text = "Cadastre um novo veículo na locadora.",
+                Text = _veiculoId.HasValue ? "Atualize os dados do veículo." : "Cadastre um novo veículo na locadora.",
                 ForeColor = CorTextoSecundario,
                 AutoSize = true,
                 Location = new Point(38, 70)
@@ -184,7 +196,7 @@ namespace GoCar.Desktop
 
             btnSalvar = new Button
             {
-                Text = "Salvar Veículo",
+                Text = _veiculoId.HasValue ? "Salvar Alterações" : "Salvar Veículo",
                 Location = new Point(545, 650),
                 Size = new Size(140, 45),
                 FlatStyle = FlatStyle.Flat,
@@ -327,6 +339,94 @@ namespace GoCar.Desktop
             }
         }
 
+        private async Task CarregarVeiculoParaEdicao()
+        {
+            if (!_veiculoId.HasValue)
+                return;
+
+            try
+            {
+                var veiculo =
+                    await ApiClient.GetAsync<VeiculoEdicaoResponse>(
+                        $"api/Veiculos/{_veiculoId.Value}");
+
+                if (veiculo == null)
+                {
+                    MessageBox.Show(
+                        "Veículo não encontrado.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    Close();
+                    return;
+                }
+
+                _isAtivoAtual = veiculo.IsAtivo;
+
+                txtPlaca.Text = veiculo.Placa;
+                txtChassi.Text = veiculo.Chassi;
+                txtRenavam.Text = veiculo.Renavam;
+                txtModelo.Text = veiculo.Modelo;
+                txtMarca.Text = veiculo.Marca;
+                txtAnoFabricacao.Text = veiculo.AnoFabricacao.ToString();
+                txtAnoModelo.Text = veiculo.AnoModelo.ToString();
+                txtCor.Text = veiculo.Cor;
+                txtKmAtual.Text = veiculo.KmAtual.ToString();
+                txtValorDiaria.Text =
+                    veiculo.ValorDiaria.ToString(
+                        "N2",
+                        CultureInfo.GetCultureInfo("pt-BR"));
+
+                SelecionarOpcaoEnum(cmbCombustivel, veiculo.Combustivel);
+                SelecionarOpcaoEnum(cmbCambio, veiculo.Cambio);
+                SelecionarOpcaoEnum(cmbStatus, veiculo.Status);
+                SelecionarItemPorId(cmbCategoria, veiculo.CategoriaId);
+                SelecionarItemPorId(cmbFilial, veiculo.FilialId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Não foi possível carregar o veículo para edição.\n\n" +
+                    ex.Message,
+                    "GoCar",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private void SelecionarOpcaoEnum(ComboBox combo, int id)
+        {
+            for (int i = 0; i < combo.Items.Count; i++)
+            {
+                if (combo.Items[i] is OpcaoEnum opcao &&
+                    opcao.Id == id)
+                {
+                    combo.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        private void SelecionarItemPorId(ComboBox combo, int id)
+        {
+            for (int i = 0; i < combo.Items.Count; i++)
+            {
+                if (combo.Items[i] is CategoriaResponse categoria &&
+                    categoria.Id == id)
+                {
+                    combo.SelectedIndex = i;
+                    return;
+                }
+
+                if (combo.Items[i] is FilialResponse filial &&
+                    filial.Id == id)
+                {
+                    combo.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
         private async void BtnSalvar_Click(
             object? sender,
             EventArgs e)
@@ -415,24 +515,50 @@ namespace GoCar.Desktop
                     filialId = filial.Id
                 };
 
-                var response =
-                    await ApiClient.PostAsync(
+                var dadosVeiculo = new
+                {
+                    placa = novoVeiculo.placa,
+                    chassi = novoVeiculo.chassi,
+                    renavam = novoVeiculo.renavam,
+                    modelo = novoVeiculo.modelo,
+                    marca = novoVeiculo.marca,
+                    anoFabricacao = novoVeiculo.anoFabricacao,
+                    anoModelo = novoVeiculo.anoModelo,
+                    cor = novoVeiculo.cor,
+                    combustivel = novoVeiculo.combustivel,
+                    cambio = novoVeiculo.cambio,
+                    status = novoVeiculo.status,
+                    kmAtual = novoVeiculo.kmAtual,
+                    valorDiaria = novoVeiculo.valorDiaria,
+                    isAtivo = _veiculoId.HasValue
+                        ? _isAtivoAtual
+                        : true,
+                    categoriaId = novoVeiculo.categoriaId,
+                    filialId = novoVeiculo.filialId
+                };
+
+                var response = _veiculoId.HasValue
+                    ? await ApiClient.PutAsync(
+                        $"api/Veiculos/{_veiculoId.Value}",
+                        dadosVeiculo)
+                    : await ApiClient.PostAsync(
                         "api/Veiculos",
-                        novoVeiculo);
+                        dadosVeiculo);
 
                 if (response.IsSuccessStatusCode)
                 {
                     VeiculoCadastrado = true;
 
                     MessageBox.Show(
-                        "Veículo cadastrado com sucesso!",
+                        _veiculoId.HasValue
+                            ? "Veículo atualizado com sucesso!"
+                            : "Veículo cadastrado com sucesso!",
                         "GoCar",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
 
                     DialogResult = DialogResult.OK;
                     Close();
-
                     return;
                 }
 
@@ -440,7 +566,10 @@ namespace GoCar.Desktop
                     await response.Content.ReadAsStringAsync();
 
                 MessageBox.Show(
-                    "Não foi possível cadastrar o veículo.\n\n" +
+                    (_veiculoId.HasValue
+                        ? "Não foi possível atualizar o veículo."
+                        : "Não foi possível cadastrar o veículo.") +
+                    "\n\n" +
                     $"Código: {(int)response.StatusCode}\n\n" +
                     erro,
                     "GoCar",
@@ -450,7 +579,9 @@ namespace GoCar.Desktop
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Erro ao cadastrar veículo.\n\n" +
+                    (_veiculoId.HasValue
+                        ? "Erro ao atualizar veículo.\n\n"
+                        : "Erro ao cadastrar veículo.\n\n") +
                     ex.Message,
                     "GoCar",
                     MessageBoxButtons.OK,
@@ -459,7 +590,7 @@ namespace GoCar.Desktop
             finally
             {
                 btnSalvar.Enabled = true;
-                btnSalvar.Text = "Salvar Veículo";
+                btnSalvar.Text = _veiculoId.HasValue ? "Salvar Alterações" : "Salvar Veículo";
             }
         }
 
@@ -555,6 +686,27 @@ namespace GoCar.Desktop
             }
 
             return true;
+        }
+
+        private class VeiculoEdicaoResponse
+        {
+            public int Id { get; set; }
+            public string Placa { get; set; } = "";
+            public string Chassi { get; set; } = "";
+            public string Renavam { get; set; } = "";
+            public string Modelo { get; set; } = "";
+            public string Marca { get; set; } = "";
+            public int AnoFabricacao { get; set; }
+            public int AnoModelo { get; set; }
+            public string Cor { get; set; } = "";
+            public int Combustivel { get; set; }
+            public int Cambio { get; set; }
+            public int Status { get; set; }
+            public int KmAtual { get; set; }
+            public decimal ValorDiaria { get; set; }
+            public bool IsAtivo { get; set; }
+            public int CategoriaId { get; set; }
+            public int FilialId { get; set; }
         }
 
         private class OpcaoEnum

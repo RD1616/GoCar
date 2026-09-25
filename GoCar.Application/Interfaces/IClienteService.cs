@@ -8,9 +8,11 @@ namespace GoCar.Application.Interfaces
 
         Task<ClienteDto?> ObterPorIdAsync(int id);
 
-        Task<ClienteDto?> ObterPorUsuarioIdAsync(int usuarioId);
+        Task<ClienteDto?> ObterPorUsuarioIdAsync(
+            int usuarioId);
 
-        Task<ClienteDto> CriarAsync(CriarClienteDto dto);
+        Task<ClienteDto> CriarAsync(
+            CriarClienteDto dto);
 
         Task<bool> AtualizarAsync(
             int id,
@@ -19,5 +21,7 @@ namespace GoCar.Application.Interfaces
         Task<bool> ExcluirAsync(int id);
 
         Task<bool> AtivarAsync(int id);
+
+        Task<bool> ExcluirPermanentementeAsync(int id);
     }
 }

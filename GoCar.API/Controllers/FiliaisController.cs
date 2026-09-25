@@ -104,7 +104,7 @@ namespace GoCar.API.Controllers
         }
 
         // =====================================================
-        // EXCLUIR / DESATIVAR
+        // DESATIVAR
         // =====================================================
 
         [HttpDelete("{id}")]
@@ -117,6 +117,67 @@ namespace GoCar.API.Controllers
             {
                 var excluido =
                     await _service.ExcluirAsync(id);
+
+                if (!excluido)
+                {
+                    return NotFound(new
+                    {
+                        mensagem =
+                            "Filial não encontrada."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new
+                {
+                    mensagem = ex.Message
+                });
+            }
+        }
+
+        // =====================================================
+        // REATIVAR
+        // =====================================================
+
+        [HttpPut("{id}/ativar")]
+        [Authorize(
+            Roles = "Administrador,Gerente,Atendente")]
+        public async Task<IActionResult> Ativar(
+            int id)
+        {
+            var ativado =
+                await _service.AtivarAsync(id);
+
+            if (!ativado)
+            {
+                return NotFound(new
+                {
+                    mensagem =
+                        "Filial não encontrada."
+                });
+            }
+
+            return NoContent();
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        [HttpDelete("{id}/permanente")]
+        [Authorize(
+            Roles = "Administrador,Gerente,Atendente")]
+        public async Task<IActionResult>
+            ExcluirPermanentemente(int id)
+        {
+            try
+            {
+                var excluido =
+                    await _service
+                        .ExcluirPermanentementeAsync(id);
 
                 if (!excluido)
                 {

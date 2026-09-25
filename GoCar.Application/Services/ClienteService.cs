@@ -78,64 +78,30 @@ namespace GoCar.Application.Services
         public async Task<ClienteDto> CriarAsync(
             CriarClienteDto dto)
         {
-            var cliente =
-                new Cliente
-                {
-                    UsuarioId =
-                        dto.UsuarioId,
-
-                    Nome =
-                        dto.Nome,
-
-                    CPF =
-                        dto.CPF,
-
-                    DataNascimento =
-                        dto.DataNascimento,
-
-                    Telefone =
-                        dto.Telefone,
-
-                    CNH =
-                        dto.CNH,
-
-                    CategoriaCNH =
-                        dto.CategoriaCNH,
-
-                    DataValidadeCNH =
-                        dto.DataValidadeCNH,
-
-                    Endereco =
-                        dto.Endereco,
-
-                    Numero =
-                        dto.Numero,
-
-                    Bairro =
-                        dto.Bairro,
-
-                    Cidade =
-                        dto.Cidade,
-
-                    Estado =
-                        dto.Estado,
-
-                    CEP =
-                        dto.CEP,
-
-                    IsAtivo =
-                        true,
-
-                    DataCadastro =
-                        DateTime.Now
-                };
+            var cliente = new Cliente
+            {
+                UsuarioId = dto.UsuarioId,
+                Nome = dto.Nome,
+                CPF = dto.CPF,
+                DataNascimento = dto.DataNascimento,
+                Telefone = dto.Telefone,
+                CNH = dto.CNH,
+                CategoriaCNH = dto.CategoriaCNH,
+                DataValidadeCNH = dto.DataValidadeCNH,
+                Endereco = dto.Endereco,
+                Numero = dto.Numero,
+                Bairro = dto.Bairro,
+                Cidade = dto.Cidade,
+                Estado = dto.Estado,
+                CEP = dto.CEP,
+                IsAtivo = true,
+                DataCadastro = DateTime.Now
+            };
 
             var clienteCriado =
-                await _repository
-                    .CriarAsync(cliente);
+                await _repository.CriarAsync(cliente);
 
-            return MapearParaDto(
-                clienteCriado);
+            return MapearParaDto(clienteCriado);
         }
 
         // =====================================================
@@ -147,50 +113,24 @@ namespace GoCar.Application.Services
             AtualizarClienteDto dto)
         {
             var cliente =
-                await _repository
-                    .ObterPorIdAsync(id);
+                await _repository.ObterPorIdAsync(id);
 
             if (cliente == null)
                 return false;
 
-            cliente.Nome =
-                dto.Nome;
-
-            cliente.CPF =
-                dto.CPF;
-
-            cliente.DataNascimento =
-                dto.DataNascimento;
-
-            cliente.Telefone =
-                dto.Telefone;
-
-            cliente.CNH =
-                dto.CNH;
-
-            cliente.CategoriaCNH =
-                dto.CategoriaCNH;
-
-            cliente.DataValidadeCNH =
-                dto.DataValidadeCNH;
-
-            cliente.Endereco =
-                dto.Endereco;
-
-            cliente.Numero =
-                dto.Numero;
-
-            cliente.Bairro =
-                dto.Bairro;
-
-            cliente.Cidade =
-                dto.Cidade;
-
-            cliente.Estado =
-                dto.Estado;
-
-            cliente.CEP =
-                dto.CEP;
+            cliente.Nome = dto.Nome;
+            cliente.CPF = dto.CPF;
+            cliente.DataNascimento = dto.DataNascimento;
+            cliente.Telefone = dto.Telefone;
+            cliente.CNH = dto.CNH;
+            cliente.CategoriaCNH = dto.CategoriaCNH;
+            cliente.DataValidadeCNH = dto.DataValidadeCNH;
+            cliente.Endereco = dto.Endereco;
+            cliente.Numero = dto.Numero;
+            cliente.Bairro = dto.Bairro;
+            cliente.Cidade = dto.Cidade;
+            cliente.Estado = dto.Estado;
+            cliente.CEP = dto.CEP;
 
             return await _repository
                 .AtualizarAsync(cliente);
@@ -204,15 +144,10 @@ namespace GoCar.Application.Services
             int id)
         {
             var cliente =
-                await _repository
-                    .ObterPorIdAsync(id);
+                await _repository.ObterPorIdAsync(id);
 
             if (cliente == null)
                 return false;
-
-            // =================================================
-            // BUSCAR RESERVAS DO CLIENTE
-            // =================================================
 
             var reservas =
                 (await _reservaRepository
@@ -268,8 +203,7 @@ namespace GoCar.Application.Services
             // =================================================
 
             var clienteDesativado =
-                await _repository
-                    .ExcluirAsync(id);
+                await _repository.ExcluirAsync(id);
 
             if (!clienteDesativado)
                 return false;
@@ -285,8 +219,7 @@ namespace GoCar.Application.Services
 
             if (usuario != null)
             {
-                usuario.IsAtivo =
-                    false;
+                usuario.IsAtivo = false;
 
                 var usuarioAtualizado =
                     await _usuarioRepository
@@ -311,18 +244,12 @@ namespace GoCar.Application.Services
             int id)
         {
             var cliente =
-                await _repository
-                    .ObterPorIdAsync(id);
+                await _repository.ObterPorIdAsync(id);
 
             if (cliente == null)
                 return false;
 
-            // =================================================
-            // ATIVAR CLIENTE
-            // =====================================================
-
-            cliente.IsAtivo =
-                true;
+            cliente.IsAtivo = true;
 
             var clienteAtualizado =
                 await _repository
@@ -331,10 +258,6 @@ namespace GoCar.Application.Services
             if (!clienteAtualizado)
                 return false;
 
-            // =================================================
-            // ATIVAR USUÁRIO VINCULADO
-            // =====================================================
-
             var usuario =
                 await _usuarioRepository
                     .ObterPorIdAsync(
@@ -342,8 +265,7 @@ namespace GoCar.Application.Services
 
             if (usuario != null)
             {
-                usuario.IsAtivo =
-                    true;
+                usuario.IsAtivo = true;
 
                 var usuarioAtualizado =
                     await _usuarioRepository
@@ -361,6 +283,63 @@ namespace GoCar.Application.Services
         }
 
         // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool>
+            ExcluirPermanentementeAsync(int id)
+        {
+            var cliente =
+                await _repository.ObterPorIdAsync(id);
+
+            if (cliente == null)
+                return false;
+
+            var reservas =
+                (await _reservaRepository
+                    .ListarPorClienteIdAsync(id))
+                .ToList();
+
+            // Qualquer reserva representa histórico.
+            // Portanto, o cliente não deve ser removido
+            // fisicamente enquanto esse histórico existir.
+            if (reservas.Any())
+            {
+                throw new Exception(
+                    "Não é possível excluir permanentemente " +
+                    "este cliente porque ele possui reservas " +
+                    "ou histórico de locação vinculado.");
+            }
+
+            // Mantemos o usuário no banco, pois a interface
+            // atual de IUsuarioRepository não possui exclusão.
+            // Antes de remover o cliente, o login fica inativo.
+            var usuario =
+                await _usuarioRepository
+                    .ObterPorIdAsync(
+                        cliente.UsuarioId);
+
+            if (usuario != null)
+            {
+                usuario.IsAtivo = false;
+
+                var usuarioAtualizado =
+                    await _usuarioRepository
+                        .AtualizarAsync(usuario);
+
+                if (!usuarioAtualizado)
+                {
+                    throw new Exception(
+                        "Não foi possível desativar o usuário " +
+                        "vinculado ao cliente.");
+                }
+            }
+
+            return await _repository
+                .ExcluirPermanentementeAsync(id);
+        }
+
+        // =====================================================
         // MAPEAR PARA DTO
         // =====================================================
 
@@ -369,53 +348,22 @@ namespace GoCar.Application.Services
         {
             return new ClienteDto
             {
-                Id =
-                    cliente.Id,
-
-                Nome =
-                    cliente.Nome,
-
-                CPF =
-                    cliente.CPF,
-
-                DataNascimento =
-                    cliente.DataNascimento,
-
-                Telefone =
-                    cliente.Telefone,
-
-                CNH =
-                    cliente.CNH,
-
-                CategoriaCNH =
-                    cliente.CategoriaCNH,
-
-                DataValidadeCNH =
-                    cliente.DataValidadeCNH,
-
-                Endereco =
-                    cliente.Endereco,
-
-                Numero =
-                    cliente.Numero,
-
-                Bairro =
-                    cliente.Bairro,
-
-                Cidade =
-                    cliente.Cidade,
-
-                Estado =
-                    cliente.Estado,
-
-                CEP =
-                    cliente.CEP,
-
-                IsAtivo =
-                    cliente.IsAtivo,
-
-                DataCadastro =
-                    cliente.DataCadastro
+                Id = cliente.Id,
+                Nome = cliente.Nome,
+                CPF = cliente.CPF,
+                DataNascimento = cliente.DataNascimento,
+                Telefone = cliente.Telefone,
+                CNH = cliente.CNH,
+                CategoriaCNH = cliente.CategoriaCNH,
+                DataValidadeCNH = cliente.DataValidadeCNH,
+                Endereco = cliente.Endereco,
+                Numero = cliente.Numero,
+                Bairro = cliente.Bairro,
+                Cidade = cliente.Cidade,
+                Estado = cliente.Estado,
+                CEP = cliente.CEP,
+                IsAtivo = cliente.IsAtivo,
+                DataCadastro = cliente.DataCadastro
             };
         }
     }

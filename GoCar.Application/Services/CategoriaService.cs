@@ -55,28 +55,17 @@ namespace GoCar.Application.Services
         {
             var categoria = new Categoria
             {
-                Nome =
-                    dto.Nome,
-
-                Descricao =
-                    dto.Descricao,
-
-                DiariaBase =
-                    dto.DiariaBase,
-
-                KmLivre =
-                    dto.KmLivre,
-
-                IsAtivo =
-                    true
+                Nome = dto.Nome,
+                Descricao = dto.Descricao,
+                DiariaBase = dto.DiariaBase,
+                KmLivre = dto.KmLivre,
+                IsAtivo = true
             };
 
             var categoriaCriada =
-                await _repository
-                    .CriarAsync(categoria);
+                await _repository.CriarAsync(categoria);
 
-            return MapearParaDto(
-                categoriaCriada);
+            return MapearParaDto(categoriaCriada);
         }
 
         // =====================================================
@@ -93,31 +82,21 @@ namespace GoCar.Application.Services
             if (categoria == null)
                 return false;
 
-            categoria.Nome =
-                dto.Nome;
-
-            categoria.Descricao =
-                dto.Descricao;
-
-            categoria.DiariaBase =
-                dto.DiariaBase;
-
-            categoria.KmLivre =
-                dto.KmLivre;
-
-            categoria.IsAtivo =
-                dto.IsAtivo;
+            categoria.Nome = dto.Nome;
+            categoria.Descricao = dto.Descricao;
+            categoria.DiariaBase = dto.DiariaBase;
+            categoria.KmLivre = dto.KmLivre;
+            categoria.IsAtivo = dto.IsAtivo;
 
             return await _repository
                 .AtualizarAsync(categoria);
         }
 
         // =====================================================
-        // EXCLUIR / DESATIVAR
+        // DESATIVAR
         // =====================================================
 
-        public async Task<bool> ExcluirAsync(
-            int id)
+        public async Task<bool> ExcluirAsync(int id)
         {
             var categoria =
                 await _repository.ObterPorIdAsync(id);
@@ -126,8 +105,7 @@ namespace GoCar.Application.Services
                 return false;
 
             var veiculos =
-                await _veiculoRepository
-                    .ListarTodosAsync();
+                await _veiculoRepository.ListarTodosAsync();
 
             var possuiVeiculoAtivo =
                 veiculos.Any(v =>
@@ -140,8 +118,57 @@ namespace GoCar.Application.Services
                     "Não é possível desativar a categoria porque existem veículos ativos vinculados a ela.");
             }
 
+            return await _repository.ExcluirAsync(id);
+        }
+
+        // =====================================================
+        // REATIVAR
+        // =====================================================
+
+        public async Task<bool> AtivarAsync(int id)
+        {
+            var categoria =
+                await _repository.ObterPorIdAsync(id);
+
+            if (categoria == null)
+                return false;
+
+            if (categoria.IsAtivo)
+                return true;
+
+            return await _repository.AtivarAsync(id);
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool>
+            ExcluirPermanentementeAsync(int id)
+        {
+            var categoria =
+                await _repository.ObterPorIdAsync(id);
+
+            if (categoria == null)
+                return false;
+
+            // Para exclusão permanente, não permitimos
+            // nenhum veículo vinculado, seja ativo ou inativo.
+            var veiculos =
+                await _veiculoRepository.ListarTodosAsync();
+
+            var possuiVeiculoVinculado =
+                veiculos.Any(v =>
+                    v.CategoriaId == id);
+
+            if (possuiVeiculoVinculado)
+            {
+                throw new InvalidOperationException(
+                    "Não é possível excluir permanentemente esta categoria porque existem veículos vinculados a ela.");
+            }
+
             return await _repository
-                .ExcluirAsync(id);
+                .ExcluirPermanentementeAsync(id);
         }
 
         // =====================================================
@@ -153,23 +180,12 @@ namespace GoCar.Application.Services
         {
             return new CategoriaDto
             {
-                Id =
-                    categoria.Id,
-
-                Nome =
-                    categoria.Nome,
-
-                Descricao =
-                    categoria.Descricao,
-
-                DiariaBase =
-                    categoria.DiariaBase,
-
-                KmLivre =
-                    categoria.KmLivre,
-
-                IsAtivo =
-                    categoria.IsAtivo
+                Id = categoria.Id,
+                Nome = categoria.Nome,
+                Descricao = categoria.Descricao,
+                DiariaBase = categoria.DiariaBase,
+                KmLivre = categoria.KmLivre,
+                IsAtivo = categoria.IsAtivo
             };
         }
     }

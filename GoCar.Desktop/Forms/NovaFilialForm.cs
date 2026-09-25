@@ -3,7 +3,6 @@ using GoCar.Desktop.Session;
 using System;
 using System.Drawing;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -27,14 +26,36 @@ namespace GoCar.Desktop.Forms
         private Button btnCadastrar = null!;
         private Button btnCancelar = null!;
 
+        private Label lblTitulo = null!;
+        private Label lblDescricao = null!;
+
         private readonly HttpClient _viaCepClient = new();
+
+        private readonly int? _filialId;
+        private bool _isAtivoAtual = true;
 
         public bool FilialCadastrada { get; private set; }
 
+        private bool ModoEdicao =>
+            _filialId.HasValue;
+
+        // =====================================================
+        // CONSTRUTORES
+        // =====================================================
+
         public NovaFilialForm()
+            : this(null)
         {
+        }
+
+        public NovaFilialForm(int? filialId)
+        {
+            _filialId = filialId;
+
             ConfigurarFormulario();
             CriarInterface();
+
+            Shown += NovaFilialForm_Shown;
         }
 
         // =====================================================
@@ -43,19 +64,27 @@ namespace GoCar.Desktop.Forms
 
         private void ConfigurarFormulario()
         {
-            Text = "Nova Filial - GoCar";
+            Text = ModoEdicao
+                ? "Editar Filial - GoCar"
+                : "Nova Filial - GoCar";
 
-            StartPosition = FormStartPosition.CenterParent;
+            StartPosition =
+                FormStartPosition.CenterParent;
 
-            ClientSize = new Size(900, 760);
+            ClientSize =
+                new Size(900, 760);
 
-            BackColor = Color.FromArgb(18, 18, 24);
+            BackColor =
+                Color.FromArgb(18, 18, 24);
 
-            ForeColor = Color.White;
+            ForeColor =
+                Color.White;
 
-            Font = new Font("Segoe UI", 10);
+            Font =
+                new Font("Segoe UI", 10);
 
-            FormBorderStyle = FormBorderStyle.FixedDialog;
+            FormBorderStyle =
+                FormBorderStyle.FixedDialog;
 
             MaximizeBox = false;
             MinimizeBox = false;
@@ -67,9 +96,11 @@ namespace GoCar.Desktop.Forms
 
         private void CriarInterface()
         {
-            Label lblTitulo = new Label
+            lblTitulo = new Label
             {
-                Text = "Nova Filial",
+                Text = ModoEdicao
+                    ? "Editar Filial"
+                    : "Nova Filial",
 
                 Font = new Font(
                     "Segoe UI",
@@ -83,9 +114,11 @@ namespace GoCar.Desktop.Forms
                 Location = new Point(40, 25)
             };
 
-            Label lblDescricao = new Label
+            lblDescricao = new Label
             {
-                Text = "Cadastre uma nova unidade da locadora.",
+                Text = ModoEdicao
+                    ? "Atualize os dados da unidade da locadora."
+                    : "Cadastre uma nova unidade da locadora.",
 
                 ForeColor = Color.FromArgb(
                     170,
@@ -240,16 +273,20 @@ namespace GoCar.Desktop.Forms
                     140,
                     45),
 
-                FlatStyle = FlatStyle.Flat,
+                FlatStyle =
+                    FlatStyle.Flat,
 
-                BackColor = Color.FromArgb(
-                    45,
-                    45,
-                    55),
+                BackColor =
+                    Color.FromArgb(
+                        45,
+                        45,
+                        55),
 
-                ForeColor = Color.White,
+                ForeColor =
+                    Color.White,
 
-                Cursor = Cursors.Hand
+                Cursor =
+                    Cursors.Hand
             };
 
             btnCancelar.FlatAppearance.BorderColor =
@@ -260,7 +297,9 @@ namespace GoCar.Desktop.Forms
 
             btnCadastrar = new Button
             {
-                Text = "Cadastrar Filial",
+                Text = ModoEdicao
+                    ? "Salvar Alterações"
+                    : "Cadastrar Filial",
 
                 Location = new Point(
                     720,
@@ -270,16 +309,20 @@ namespace GoCar.Desktop.Forms
                     140,
                     45),
 
-                FlatStyle = FlatStyle.Flat,
+                FlatStyle =
+                    FlatStyle.Flat,
 
-                BackColor = Color.FromArgb(
-                    111,
-                    38,
-                    201),
+                BackColor =
+                    Color.FromArgb(
+                        111,
+                        38,
+                        201),
 
-                ForeColor = Color.White,
+                ForeColor =
+                    Color.White,
 
-                Cursor = Cursors.Hand,
+                Cursor =
+                    Cursors.Hand,
 
                 Font = new Font(
                     "Segoe UI",
@@ -303,7 +346,7 @@ namespace GoCar.Desktop.Forms
             btnCadastrar.Click +=
                 async (s, e) =>
                 {
-                    await CadastrarFilialAsync();
+                    await SalvarFilialAsync();
                 };
 
             Controls.Add(btnCancelar);
@@ -311,6 +354,134 @@ namespace GoCar.Desktop.Forms
 
             AcceptButton = btnCadastrar;
             CancelButton = btnCancelar;
+        }
+
+        // =====================================================
+        // FORMULÁRIO EXIBIDO
+        // =====================================================
+
+        private async void NovaFilialForm_Shown(
+            object? sender,
+            EventArgs e)
+        {
+            if (!ModoEdicao)
+                return;
+
+            await CarregarFilialAsync();
+        }
+
+        // =====================================================
+        // CARREGAR FILIAL PARA EDIÇÃO
+        // =====================================================
+
+        private async Task CarregarFilialAsync()
+        {
+            if (!_filialId.HasValue)
+                return;
+
+            try
+            {
+                Cursor =
+                    Cursors.WaitCursor;
+
+                btnCadastrar.Enabled =
+                    false;
+
+                ConfigurarToken();
+
+                FilialEdicaoResponse? filial =
+                    await ApiClient
+                        .GetAsync<FilialEdicaoResponse>(
+                            $"api/Filiais/{_filialId.Value}");
+
+                if (filial == null)
+                {
+                    MessageBox.Show(
+                        "Não foi possível carregar os dados da filial.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    Close();
+
+                    return;
+                }
+
+                txtNome.Text =
+                    filial.Nome;
+
+                txtCnpj.Text =
+                    filial.CNPJ;
+
+                txtTelefone.Text =
+                    filial.Telefone;
+
+                txtEmail.Text =
+                    filial.Email;
+
+                txtCep.Text =
+                    FormatarCep(
+                        SomenteNumeros(
+                            filial.CEP));
+
+                txtEndereco.Text =
+                    filial.Endereco;
+
+                txtNumero.Text =
+                    filial.Numero;
+
+                txtBairro.Text =
+                    filial.Bairro;
+
+                txtCidade.Text =
+                    filial.Cidade;
+
+                txtEstado.Text =
+                    filial.Estado
+                        .ToUpper();
+
+                _isAtivoAtual =
+                    filial.IsAtivo;
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    "Não foi possível conectar à API.\n\n" +
+                    ex.Message,
+
+                    "Erro de conexão",
+
+                    MessageBoxButtons.OK,
+
+                    MessageBoxIcon.Error);
+
+                Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ocorreu um erro ao carregar a filial.\n\n" +
+                    ex.Message,
+
+                    "GoCar",
+
+                    MessageBoxButtons.OK,
+
+                    MessageBoxIcon.Error);
+
+                Close();
+            }
+            finally
+            {
+                if (!IsDisposed)
+                {
+                    btnCadastrar.Enabled =
+                        true;
+
+                    Cursor =
+                        Cursors.Default;
+                }
+            }
         }
 
         // =====================================================
@@ -341,13 +512,15 @@ namespace GoCar.Desktop.Forms
 
             try
             {
-                Cursor = Cursors.WaitCursor;
+                Cursor =
+                    Cursors.WaitCursor;
 
                 string url =
                     $"https://viacep.com.br/ws/{cep}/json/";
 
                 using HttpResponseMessage response =
-                    await _viaCepClient.GetAsync(url);
+                    await _viaCepClient
+                        .GetAsync(url);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -364,22 +537,21 @@ namespace GoCar.Desktop.Forms
                 JsonElement root =
                     documento.RootElement;
 
-                // ViaCEP pode retornar erro como booleano
-                // ou como texto dependendo da resposta.
-
                 if (root.TryGetProperty(
                         "erro",
                         out JsonElement erro))
                 {
                     bool cepInexistente =
-                        erro.ValueKind == JsonValueKind.True ||
+                        erro.ValueKind ==
+                            JsonValueKind.True ||
                         (
                             erro.ValueKind ==
-                            JsonValueKind.String &&
+                                JsonValueKind.String &&
                             string.Equals(
                                 erro.GetString(),
                                 "true",
-                                StringComparison.OrdinalIgnoreCase)
+                                StringComparison
+                                    .OrdinalIgnoreCase)
                         );
 
                     if (cepInexistente)
@@ -422,8 +594,8 @@ namespace GoCar.Desktop.Forms
             }
             catch (HttpRequestException)
             {
-                // Não bloqueia o cadastro caso
-                // o ViaCEP esteja indisponível.
+                // Não bloqueia o formulário
+                // caso o ViaCEP esteja indisponível.
             }
             catch (JsonException)
             {
@@ -431,15 +603,16 @@ namespace GoCar.Desktop.Forms
             }
             finally
             {
-                Cursor = Cursors.Default;
+                Cursor =
+                    Cursors.Default;
             }
         }
 
         // =====================================================
-        // CADASTRAR
+        // SALVAR
         // =====================================================
 
-        private async Task CadastrarFilialAsync()
+        private async Task SalvarFilialAsync()
         {
             if (!ValidarCampos())
                 return;
@@ -479,14 +652,25 @@ namespace GoCar.Desktop.Forms
                     .Trim()
                     .ToUpper();
 
+            string mensagemConfirmacao =
+                ModoEdicao
+                    ? "Deseja salvar as alterações desta filial?"
+                    : "Deseja cadastrar esta filial?";
+
+            string tituloConfirmacao =
+                ModoEdicao
+                    ? "Confirmar alterações"
+                    : "Confirmar cadastro";
+
             DialogResult confirmacao =
                 MessageBox.Show(
-                    "Deseja cadastrar esta filial?\n\n" +
+                    mensagemConfirmacao +
+                    "\n\n" +
                     $"Nome: {nome}\n" +
                     $"CNPJ: {cnpj}\n" +
                     $"Cidade: {cidade} - {estado}",
 
-                    "Confirmar cadastro",
+                    tituloConfirmacao,
 
                     MessageBoxButtons.YesNo,
 
@@ -498,46 +682,85 @@ namespace GoCar.Desktop.Forms
                 return;
             }
 
-            var request = new
-            {
-                nome,
-                cnpj,
-                telefone,
-                email,
-                endereco,
-                numero,
-                bairro,
-                cidade,
-                estado,
-                cep
-            };
-
             try
             {
-                btnCadastrar.Enabled = false;
-                btnCancelar.Enabled = false;
+                btnCadastrar.Enabled =
+                    false;
+
+                btnCancelar.Enabled =
+                    false;
 
                 btnCadastrar.Text =
-                    "Cadastrando...";
+                    ModoEdicao
+                        ? "Salvando..."
+                        : "Cadastrando...";
 
                 Cursor =
                     Cursors.WaitCursor;
 
                 ConfigurarToken();
 
-                HttpResponseMessage response =
-                    await ApiClient.PostAsync(
-                        "api/Filiais",
-                        request);
+                HttpResponseMessage response;
+
+                if (ModoEdicao)
+                {
+                    var request = new
+                    {
+                        nome,
+                        cnpj,
+                        telefone,
+                        email,
+                        endereco,
+                        numero,
+                        bairro,
+                        cidade,
+                        estado,
+                        cep,
+                        isAtivo =
+                            _isAtivoAtual
+                    };
+
+                    response =
+                        await ApiClient.PutAsync(
+                            $"api/Filiais/{_filialId!.Value}",
+                            request);
+                }
+                else
+                {
+                    var request = new
+                    {
+                        nome,
+                        cnpj,
+                        telefone,
+                        email,
+                        endereco,
+                        numero,
+                        bairro,
+                        cidade,
+                        estado,
+                        cep
+                    };
+
+                    response =
+                        await ApiClient.PostAsync(
+                            "api/Filiais",
+                            request);
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
-                    FilialCadastrada = true;
+                    FilialCadastrada =
+                        true;
 
                     MessageBox.Show(
-                        "Filial cadastrada com sucesso!",
+                        ModoEdicao
+                            ? "Filial atualizada com sucesso!"
+                            : "Filial cadastrada com sucesso!",
+
                         "GoCar",
+
                         MessageBoxButtons.OK,
+
                         MessageBoxIcon.Information);
 
                     DialogResult =
@@ -553,9 +776,12 @@ namespace GoCar.Desktop.Forms
                         .ReadAsStringAsync();
 
                 MessageBox.Show(
-                    ObterMensagemErro(conteudo),
+                    ObterMensagemErro(
+                        conteudo),
 
-                    "Não foi possível cadastrar a filial",
+                    ModoEdicao
+                        ? "Não foi possível atualizar a filial"
+                        : "Não foi possível cadastrar a filial",
 
                     MessageBoxButtons.OK,
 
@@ -575,8 +801,13 @@ namespace GoCar.Desktop.Forms
             }
             catch (Exception ex)
             {
+                string mensagem =
+                    ModoEdicao
+                        ? "Ocorreu um erro ao atualizar a filial.\n\n"
+                        : "Ocorreu um erro ao cadastrar a filial.\n\n";
+
                 MessageBox.Show(
-                    "Ocorreu um erro ao cadastrar a filial.\n\n" +
+                    mensagem +
                     ex.Message,
 
                     "GoCar",
@@ -589,11 +820,16 @@ namespace GoCar.Desktop.Forms
             {
                 if (!IsDisposed)
                 {
-                    btnCadastrar.Enabled = true;
-                    btnCancelar.Enabled = true;
+                    btnCadastrar.Enabled =
+                        true;
+
+                    btnCancelar.Enabled =
+                        true;
 
                     btnCadastrar.Text =
-                        "Cadastrar Filial";
+                        ModoEdicao
+                            ? "Salvar Alterações"
+                            : "Cadastrar Filial";
 
                     Cursor =
                         Cursors.Default;
@@ -708,8 +944,7 @@ namespace GoCar.Desktop.Forms
             }
 
             string estado =
-                txtEstado.Text
-                    .Trim();
+                txtEstado.Text.Trim();
 
             if (estado.Length != 2)
             {
@@ -745,27 +980,32 @@ namespace GoCar.Desktop.Forms
             int x,
             int y)
         {
-            Label label = new Label
-            {
-                Text = texto,
+            Label label =
+                new Label
+                {
+                    Text =
+                        texto,
 
-                Location =
-                    new Point(x, y),
+                    Location =
+                        new Point(
+                            x,
+                            y),
 
-                AutoSize = true,
+                    AutoSize =
+                        true,
 
-                ForeColor =
-                    Color.FromArgb(
-                        200,
-                        200,
-                        210),
+                    ForeColor =
+                        Color.FromArgb(
+                            200,
+                            200,
+                            210),
 
-                Font =
-                    new Font(
-                        "Segoe UI",
-                        9,
-                        FontStyle.Bold)
-            };
+                    Font =
+                        new Font(
+                            "Segoe UI",
+                            9,
+                            FontStyle.Bold)
+                };
 
             Controls.Add(label);
 
@@ -817,29 +1057,32 @@ namespace GoCar.Desktop.Forms
             string texto,
             int y)
         {
-            Label label = new Label
-            {
-                Text = texto,
+            Label label =
+                new Label
+                {
+                    Text =
+                        texto,
 
-                Location =
-                    new Point(
-                        40,
-                        y),
+                    Location =
+                        new Point(
+                            40,
+                            y),
 
-                AutoSize = true,
+                    AutoSize =
+                        true,
 
-                ForeColor =
-                    Color.FromArgb(
-                        190,
-                        135,
-                        235),
+                    ForeColor =
+                        Color.FromArgb(
+                            190,
+                            135,
+                            235),
 
-                Font =
-                    new Font(
-                        "Segoe UI",
-                        12,
-                        FontStyle.Bold)
-            };
+                    Font =
+                        new Font(
+                            "Segoe UI",
+                            12,
+                            FontStyle.Bold)
+                };
 
             Controls.Add(label);
         }
@@ -851,15 +1094,19 @@ namespace GoCar.Desktop.Forms
         private static string SomenteNumeros(
             string texto)
         {
-            if (string.IsNullOrWhiteSpace(texto))
+            if (string.IsNullOrWhiteSpace(
+                    texto))
+            {
                 return string.Empty;
+            }
 
             char[] numeros =
                 Array.FindAll(
                     texto.ToCharArray(),
                     char.IsDigit);
 
-            return new string(numeros);
+            return new string(
+                numeros);
         }
 
         private static string FormatarCep(
@@ -912,13 +1159,14 @@ namespace GoCar.Desktop.Forms
                     conteudo))
             {
                 return
-                    "Não foi possível cadastrar a filial.";
+                    "Não foi possível concluir a operação.";
             }
 
             try
             {
                 using JsonDocument json =
-                    JsonDocument.Parse(conteudo);
+                    JsonDocument.Parse(
+                        conteudo);
 
                 if (json.RootElement
                     .TryGetProperty(
@@ -926,7 +1174,7 @@ namespace GoCar.Desktop.Forms
                         out JsonElement mensagem))
                 {
                     return mensagem.GetString()
-                        ?? "Não foi possível cadastrar a filial.";
+                        ?? "Não foi possível concluir a operação.";
                 }
 
                 if (json.RootElement
@@ -938,7 +1186,9 @@ namespace GoCar.Desktop.Forms
                         JsonProperty propriedade
                         in errors.EnumerateObject())
                     {
-                        if (propriedade.Value.ValueKind !=
+                        if (propriedade
+                                .Value
+                                .ValueKind !=
                             JsonValueKind.Array)
                         {
                             continue;
@@ -946,7 +1196,8 @@ namespace GoCar.Desktop.Forms
 
                         foreach (
                             JsonElement item
-                            in propriedade.Value
+                            in propriedade
+                                .Value
                                 .EnumerateArray())
                         {
                             string? texto =
@@ -964,10 +1215,51 @@ namespace GoCar.Desktop.Forms
             catch
             {
                 // Se a API não retornar JSON,
-                // mostramos a resposta original.
+                // retorna a resposta original.
             }
 
             return conteudo;
+        }
+
+        // =====================================================
+        // RESPONSE PARA EDIÇÃO
+        // =====================================================
+
+        private class FilialEdicaoResponse
+        {
+            public int Id { get; set; }
+
+            public string Nome { get; set; } =
+                string.Empty;
+
+            public string CNPJ { get; set; } =
+                string.Empty;
+
+            public string Telefone { get; set; } =
+                string.Empty;
+
+            public string Email { get; set; } =
+                string.Empty;
+
+            public string Endereco { get; set; } =
+                string.Empty;
+
+            public string Numero { get; set; } =
+                string.Empty;
+
+            public string Bairro { get; set; } =
+                string.Empty;
+
+            public string Cidade { get; set; } =
+                string.Empty;
+
+            public string Estado { get; set; } =
+                string.Empty;
+
+            public string CEP { get; set; } =
+                string.Empty;
+
+            public bool IsAtivo { get; set; }
         }
     }
 }

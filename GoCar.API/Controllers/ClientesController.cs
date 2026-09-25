@@ -23,8 +23,6 @@ namespace GoCar.API.Controllers
         // LISTAR TODOS
         // =====================================================
 
-        // Somente funcionários podem listar
-        // todos os clientes.
         [HttpGet]
         [Authorize(
             Roles = "Administrador,Gerente,Atendente")]
@@ -42,8 +40,6 @@ namespace GoCar.API.Controllers
         // MEU PERFIL
         // =====================================================
 
-        // Cliente autenticado consulta
-        // o próprio cadastro.
         [HttpGet("meu-perfil")]
         [Authorize(Roles = "Cliente")]
         public async Task<ActionResult<ClienteDto>>
@@ -68,8 +64,6 @@ namespace GoCar.API.Controllers
         // OBTER POR ID
         // =====================================================
 
-        // Funcionários podem consultar qualquer cliente.
-        // Cliente só pode consultar o próprio cadastro.
         [HttpGet("{id}")]
         public async Task<ActionResult<ClienteDto>>
             ObterPorId(int id)
@@ -116,8 +110,6 @@ namespace GoCar.API.Controllers
         // CRIAR
         // =====================================================
 
-        // Somente funcionários podem cadastrar
-        // clientes diretamente por este endpoint.
         [HttpPost]
         [Authorize(
             Roles = "Administrador,Gerente,Atendente")]
@@ -137,8 +129,6 @@ namespace GoCar.API.Controllers
         // ATUALIZAR
         // =====================================================
 
-        // Funcionários podem atualizar qualquer cliente.
-        // Cliente pode atualizar somente o próprio cadastro.
         [HttpPut("{id}")]
         public async Task<IActionResult> Atualizar(
             int id,
@@ -198,8 +188,6 @@ namespace GoCar.API.Controllers
         // DESATIVAR
         // =====================================================
 
-        // Somente funcionários podem
-        // excluir/desativar clientes.
         [HttpDelete("{id}")]
         [Authorize(
             Roles = "Administrador,Gerente,Atendente")]
@@ -226,8 +214,7 @@ namespace GoCar.API.Controllers
             {
                 return BadRequest(new
                 {
-                    mensagem =
-                        ex.Message
+                    mensagem = ex.Message
                 });
             }
         }
@@ -236,34 +223,77 @@ namespace GoCar.API.Controllers
         // ATIVAR
         // =====================================================
 
-        // Somente funcionários podem reativar clientes.
         [HttpPut("{id}/ativar")]
         [Authorize(
             Roles = "Administrador,Gerente,Atendente")]
         public async Task<IActionResult> Ativar(
             int id)
         {
-            var ativado =
-                await _service.AtivarAsync(id);
-
-            if (!ativado)
+            try
             {
-                return NotFound(new
+                var ativado =
+                    await _service.AtivarAsync(id);
+
+                if (!ativado)
                 {
-                    mensagem =
-                        "Cliente não encontrado."
+                    return NotFound(new
+                    {
+                        mensagem =
+                            "Cliente não encontrado."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    mensagem = ex.Message
                 });
             }
+        }
 
-            return NoContent();
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        [HttpDelete("{id}/permanente")]
+        [Authorize(
+            Roles = "Administrador,Gerente,Atendente")]
+        public async Task<IActionResult>
+            ExcluirPermanentemente(int id)
+        {
+            try
+            {
+                var excluido =
+                    await _service
+                        .ExcluirPermanentementeAsync(id);
+
+                if (!excluido)
+                {
+                    return NotFound(new
+                    {
+                        mensagem =
+                            "Cliente não encontrado."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    mensagem = ex.Message
+                });
+            }
         }
 
         // =====================================================
         // OBTER CLIENTE LOGADO
         // =====================================================
 
-        // Localiza o cliente vinculado ao UsuarioId
-        // presente no JWT.
         private async Task<ClienteDto?>
             ObterClienteLogadoAsync()
         {

@@ -9,10 +9,15 @@ namespace GoCar.Infrastructure.Repositories
     {
         private readonly GoCarDbContext _context;
 
-        public FilialRepository(GoCarDbContext context)
+        public FilialRepository(
+            GoCarDbContext context)
         {
             _context = context;
         }
+
+        // =====================================================
+        // LISTAR TODOS
+        // =====================================================
 
         public async Task<IEnumerable<Filial>> ListarTodosAsync()
         {
@@ -21,13 +26,23 @@ namespace GoCar.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Filial?> ObterPorIdAsync(int id)
+        // =====================================================
+        // OBTER POR ID
+        // =====================================================
+
+        public async Task<Filial?> ObterPorIdAsync(
+            int id)
         {
             return await _context.Filiais
                 .FirstOrDefaultAsync(f => f.Id == id);
         }
 
-        public async Task<Filial> CriarAsync(Filial filial)
+        // =====================================================
+        // CRIAR
+        // =====================================================
+
+        public async Task<Filial> CriarAsync(
+            Filial filial)
         {
             _context.Filiais.Add(filial);
 
@@ -36,32 +51,30 @@ namespace GoCar.Infrastructure.Repositories
             return filial;
         }
 
-        public async Task<bool> AtualizarAsync(Filial filial)
+        // =====================================================
+        // ATUALIZAR
+        // =====================================================
+
+        public async Task<bool> AtualizarAsync(
+            Filial filial)
         {
-            var filialExistente = await _context.Filiais
-                .FirstOrDefaultAsync(f => f.Id == filial.Id);
+            var existe = await _context.Filiais
+                .AnyAsync(f => f.Id == filial.Id);
 
-            if (filialExistente == null)
+            if (!existe)
                 return false;
-
-            filialExistente.Nome = filial.Nome;
-            filialExistente.CNPJ = filial.CNPJ;
-            filialExistente.Telefone = filial.Telefone;
-            filialExistente.Email = filial.Email;
-            filialExistente.Endereco = filial.Endereco;
-            filialExistente.Numero = filial.Numero;
-            filialExistente.Bairro = filial.Bairro;
-            filialExistente.Cidade = filial.Cidade;
-            filialExistente.Estado = filial.Estado;
-            filialExistente.CEP = filial.CEP;
-            filialExistente.IsAtivo = filial.IsAtivo;
 
             await _context.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<bool> ExcluirAsync(int id)
+        // =====================================================
+        // DESATIVAR
+        // =====================================================
+
+        public async Task<bool> ExcluirAsync(
+            int id)
         {
             var filial = await _context.Filiais
                 .FirstOrDefaultAsync(f => f.Id == id);
@@ -70,6 +83,46 @@ namespace GoCar.Infrastructure.Repositories
                 return false;
 
             filial.IsAtivo = false;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        // =====================================================
+        // REATIVAR
+        // =====================================================
+
+        public async Task<bool> AtivarAsync(
+            int id)
+        {
+            var filial = await _context.Filiais
+                .FirstOrDefaultAsync(f => f.Id == id);
+
+            if (filial == null)
+                return false;
+
+            filial.IsAtivo = true;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool> ExcluirPermanentementeAsync(
+            int id)
+        {
+            var filial = await _context.Filiais
+                .FirstOrDefaultAsync(f => f.Id == id);
+
+            if (filial == null)
+                return false;
+
+            _context.Filiais.Remove(filial);
 
             await _context.SaveChangesAsync();
 

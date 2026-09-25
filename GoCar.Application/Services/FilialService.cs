@@ -55,45 +55,23 @@ namespace GoCar.Application.Services
         {
             var filial = new Filial
             {
-                Nome =
-                    dto.Nome,
-
-                CNPJ =
-                    dto.CNPJ,
-
-                Telefone =
-                    dto.Telefone,
-
-                Email =
-                    dto.Email,
-
-                Endereco =
-                    dto.Endereco,
-
-                Numero =
-                    dto.Numero,
-
-                Bairro =
-                    dto.Bairro,
-
-                Cidade =
-                    dto.Cidade,
-
-                Estado =
-                    dto.Estado,
-
-                CEP =
-                    dto.CEP,
-
-                IsAtivo =
-                    true
+                Nome = dto.Nome,
+                CNPJ = dto.CNPJ,
+                Telefone = dto.Telefone,
+                Email = dto.Email,
+                Endereco = dto.Endereco,
+                Numero = dto.Numero,
+                Bairro = dto.Bairro,
+                Cidade = dto.Cidade,
+                Estado = dto.Estado,
+                CEP = dto.CEP,
+                IsAtivo = true
             };
 
             var filialCriada =
                 await _repository.CriarAsync(filial);
 
-            return MapearParaDto(
-                filialCriada);
+            return MapearParaDto(filialCriada);
         }
 
         // =====================================================
@@ -110,45 +88,24 @@ namespace GoCar.Application.Services
             if (filial == null)
                 return false;
 
-            filial.Nome =
-                dto.Nome;
-
-            filial.CNPJ =
-                dto.CNPJ;
-
-            filial.Telefone =
-                dto.Telefone;
-
-            filial.Email =
-                dto.Email;
-
-            filial.Endereco =
-                dto.Endereco;
-
-            filial.Numero =
-                dto.Numero;
-
-            filial.Bairro =
-                dto.Bairro;
-
-            filial.Cidade =
-                dto.Cidade;
-
-            filial.Estado =
-                dto.Estado;
-
-            filial.CEP =
-                dto.CEP;
-
-            filial.IsAtivo =
-                dto.IsAtivo;
+            filial.Nome = dto.Nome;
+            filial.CNPJ = dto.CNPJ;
+            filial.Telefone = dto.Telefone;
+            filial.Email = dto.Email;
+            filial.Endereco = dto.Endereco;
+            filial.Numero = dto.Numero;
+            filial.Bairro = dto.Bairro;
+            filial.Cidade = dto.Cidade;
+            filial.Estado = dto.Estado;
+            filial.CEP = dto.CEP;
+            filial.IsAtivo = dto.IsAtivo;
 
             return await _repository
                 .AtualizarAsync(filial);
         }
 
         // =====================================================
-        // EXCLUIR / DESATIVAR
+        // DESATIVAR
         // =====================================================
 
         public async Task<bool> ExcluirAsync(
@@ -164,7 +121,7 @@ namespace GoCar.Application.Services
                 await _veiculoRepository
                     .ListarTodosAsync();
 
-            var possuiVeiculoAtivo =
+            bool possuiVeiculoAtivo =
                 veiculos.Any(v =>
                     v.FilialId == id &&
                     v.IsAtivo);
@@ -172,11 +129,63 @@ namespace GoCar.Application.Services
             if (possuiVeiculoAtivo)
             {
                 throw new InvalidOperationException(
-                    "Não é possível desativar a filial porque existem veículos ativos vinculados a ela.");
+                    "Não é possível desativar a filial " +
+                    "porque existem veículos ativos " +
+                    "vinculados a ela.");
             }
 
             return await _repository
                 .ExcluirAsync(id);
+        }
+
+        // =====================================================
+        // REATIVAR
+        // =====================================================
+
+        public async Task<bool> AtivarAsync(
+            int id)
+        {
+            var filial =
+                await _repository.ObterPorIdAsync(id);
+
+            if (filial == null)
+                return false;
+
+            return await _repository
+                .AtivarAsync(id);
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool> ExcluirPermanentementeAsync(
+            int id)
+        {
+            var filial =
+                await _repository.ObterPorIdAsync(id);
+
+            if (filial == null)
+                return false;
+
+            var veiculos =
+                await _veiculoRepository
+                    .ListarTodosAsync();
+
+            bool possuiVeiculoVinculado =
+                veiculos.Any(v =>
+                    v.FilialId == id);
+
+            if (possuiVeiculoVinculado)
+            {
+                throw new InvalidOperationException(
+                    "Não é possível excluir permanentemente " +
+                    "esta filial porque existem veículos " +
+                    "vinculados a ela.");
+            }
+
+            return await _repository
+                .ExcluirPermanentementeAsync(id);
         }
 
         // =====================================================
@@ -188,41 +197,18 @@ namespace GoCar.Application.Services
         {
             return new FilialDto
             {
-                Id =
-                    filial.Id,
-
-                Nome =
-                    filial.Nome,
-
-                CNPJ =
-                    filial.CNPJ,
-
-                Telefone =
-                    filial.Telefone,
-
-                Email =
-                    filial.Email,
-
-                Endereco =
-                    filial.Endereco,
-
-                Numero =
-                    filial.Numero,
-
-                Bairro =
-                    filial.Bairro,
-
-                Cidade =
-                    filial.Cidade,
-
-                Estado =
-                    filial.Estado,
-
-                CEP =
-                    filial.CEP,
-
-                IsAtivo =
-                    filial.IsAtivo
+                Id = filial.Id,
+                Nome = filial.Nome,
+                CNPJ = filial.CNPJ,
+                Telefone = filial.Telefone,
+                Email = filial.Email,
+                Endereco = filial.Endereco,
+                Numero = filial.Numero,
+                Bairro = filial.Bairro,
+                Cidade = filial.Cidade,
+                Estado = filial.Estado,
+                CEP = filial.CEP,
+                IsAtivo = filial.IsAtivo
             };
         }
     }

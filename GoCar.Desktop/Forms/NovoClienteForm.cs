@@ -1,4 +1,5 @@
-﻿using GoCar.Desktop.Services;
+using GoCar.Desktop.Services;
+using GoCar.Desktop.Session;
 using System;
 using System.Drawing;
 using System.Linq;
@@ -37,6 +38,30 @@ namespace GoCar.Desktop.Forms
 
         public bool ClienteCadastrado { get; private set; }
 
+        private readonly int? _clienteId;
+        private bool _isAtivoAtual = true;
+
+        private bool ModoEdicao => _clienteId.HasValue;
+
+        private class ClienteEdicaoResponse
+        {
+            public int Id { get; set; }
+            public string Nome { get; set; } = string.Empty;
+            public string CPF { get; set; } = string.Empty;
+            public DateTime DataNascimento { get; set; }
+            public string Telefone { get; set; } = string.Empty;
+            public string CNH { get; set; } = string.Empty;
+            public string CategoriaCNH { get; set; } = string.Empty;
+            public DateTime DataValidadeCNH { get; set; }
+            public string Endereco { get; set; } = string.Empty;
+            public string Numero { get; set; } = string.Empty;
+            public string Bairro { get; set; } = string.Empty;
+            public string Cidade { get; set; } = string.Empty;
+            public string Estado { get; set; } = string.Empty;
+            public string CEP { get; set; } = string.Empty;
+            public bool IsAtivo { get; set; }
+        }
+
         // =========================================================
         // RESPOSTA DO VIACEP
         // =========================================================
@@ -72,9 +97,22 @@ namespace GoCar.Desktop.Forms
         // =========================================================
 
         public NovoClienteForm()
+            : this(null)
         {
+        }
+
+        public NovoClienteForm(int? clienteId)
+        {
+            _clienteId = clienteId;
+
             ConfigurarFormulario();
             CriarInterface();
+
+            Shown += async (s, e) =>
+            {
+                if (ModoEdicao)
+                    await CarregarClienteParaEdicaoAsync();
+            };
         }
 
         // =========================================================
@@ -84,7 +122,9 @@ namespace GoCar.Desktop.Forms
         private void ConfigurarFormulario()
         {
             Text =
-                "Novo Cliente - GoCar";
+                ModoEdicao
+                    ? "Editar Cliente - GoCar"
+                    : "Novo Cliente - GoCar";
 
             StartPosition =
                 FormStartPosition.CenterParent;
@@ -125,7 +165,9 @@ namespace GoCar.Desktop.Forms
                 new Label
                 {
                     Text =
-                        "Novo Cliente",
+                        ModoEdicao
+                            ? "Editar Cliente"
+                            : "Novo Cliente",
 
                     Font =
                         new Font(
@@ -152,7 +194,9 @@ namespace GoCar.Desktop.Forms
                 new Label
                 {
                     Text =
-                        "Preencha os dados para cadastrar um novo cliente.",
+                        ModoEdicao
+                            ? "Atualize os dados cadastrais do cliente."
+                            : "Preencha os dados para cadastrar um novo cliente.",
 
                     Font =
                         new Font(
@@ -222,6 +266,18 @@ namespace GoCar.Desktop.Forms
 
             txtSenha.UseSystemPasswordChar =
                 true;
+
+            if (ModoEdicao)
+            {
+                txtEmail.Enabled = false;
+                txtSenha.Enabled = false;
+
+                txtEmail.Text =
+                    "Não alterado nesta tela";
+
+                txtSenha.Text =
+                    "********";
+            }
 
             CriarLabelCampo(
                 "Data de nascimento",
@@ -526,7 +582,9 @@ namespace GoCar.Desktop.Forms
                 new Button
                 {
                     Text =
-                        "Cadastrar Cliente",
+                        ModoEdicao
+                            ? "Salvar Alterações"
+                            : "Cadastrar Cliente",
 
                     Size =
                         new Size(
@@ -567,7 +625,7 @@ namespace GoCar.Desktop.Forms
             btnCadastrar.Click +=
                 async (s, e) =>
                 {
-                    await CadastrarClienteAsync();
+                    await SalvarClienteAsync();
                 };
 
             Controls.Add(
@@ -727,126 +785,108 @@ namespace GoCar.Desktop.Forms
         // CADASTRAR CLIENTE
         // =========================================================
 
-        private async Task CadastrarClienteAsync()
+        private async Task SalvarClienteAsync()
         {
             if (!ValidarCampos())
-            {
                 return;
-            }
 
-            btnCadastrar.Enabled =
-                false;
-
-            btnCancelar.Enabled =
-                false;
-
+            btnCadastrar.Enabled = false;
+            btnCancelar.Enabled = false;
             btnCadastrar.Text =
-                "Cadastrando...";
+                ModoEdicao ? "Salvando..." : "Cadastrando...";
 
             try
             {
-                var request =
-                    new
+                HttpResponseMessage response;
+
+                if (ModoEdicao)
+                {
+                    ConfigurarToken();
+
+                    var request = new
                     {
-                        nome =
-                            txtNome.Text.Trim(),
-
-                        email =
-                            txtEmail.Text.Trim(),
-
-                        senha =
-                            txtSenha.Text,
-
-                        cpf =
-                            LimparNumero(
-                                txtCpf.Text),
-
-                        telefone =
-                            LimparNumero(
-                                txtTelefone.Text),
-
-                        cnh =
-                            txtCnh.Text.Trim(),
-
+                        nome = txtNome.Text.Trim(),
+                        cpf = LimparNumero(txtCpf.Text),
+                        dataNascimento = dtpNascimento.Value.Date,
+                        telefone = LimparNumero(txtTelefone.Text),
+                        cnh = txtCnh.Text.Trim(),
                         categoriaCNH =
-                            cmbCategoriaCnh
-                                .SelectedItem?
-                                .ToString()
+                            cmbCategoriaCnh.SelectedItem?.ToString()
                             ?? string.Empty,
-
-                        dataNascimento =
-                            dtpNascimento
-                                .Value
-                                .Date,
-
-                        dataValidadeCNH =
-                            dtpValidadeCnh
-                                .Value
-                                .Date,
-
-                        endereco =
-                            txtEndereco.Text
-                                .Trim(),
-
-                        numero =
-                            txtNumero.Text
-                                .Trim(),
-
-                        bairro =
-                            txtBairro.Text
-                                .Trim(),
-
-                        cidade =
-                            txtCidade.Text
-                                .Trim(),
-
+                        dataValidadeCNH = dtpValidadeCnh.Value.Date,
+                        endereco = txtEndereco.Text.Trim(),
+                        numero = txtNumero.Text.Trim(),
+                        bairro = txtBairro.Text.Trim(),
+                        cidade = txtCidade.Text.Trim(),
                         estado =
-                            cmbEstado
-                                .SelectedItem?
-                                .ToString()
+                            cmbEstado.SelectedItem?.ToString()
                             ?? string.Empty,
-
-                        cep =
-                            LimparNumero(
-                                txtCep.Text)
+                        cep = LimparNumero(txtCep.Text),
+                        isAtivo = _isAtivoAtual
                     };
 
-                HttpResponseMessage response =
-                    await ApiClient.PostAsync(
+                    response = await ApiClient.PutAsync(
+                        $"api/Clientes/{_clienteId!.Value}",
+                        request);
+                }
+                else
+                {
+                    var request = new
+                    {
+                        nome = txtNome.Text.Trim(),
+                        email = txtEmail.Text.Trim(),
+                        senha = txtSenha.Text,
+                        cpf = LimparNumero(txtCpf.Text),
+                        telefone = LimparNumero(txtTelefone.Text),
+                        cnh = txtCnh.Text.Trim(),
+                        categoriaCNH =
+                            cmbCategoriaCnh.SelectedItem?.ToString()
+                            ?? string.Empty,
+                        dataNascimento = dtpNascimento.Value.Date,
+                        dataValidadeCNH = dtpValidadeCnh.Value.Date,
+                        endereco = txtEndereco.Text.Trim(),
+                        numero = txtNumero.Text.Trim(),
+                        bairro = txtBairro.Text.Trim(),
+                        cidade = txtCidade.Text.Trim(),
+                        estado =
+                            cmbEstado.SelectedItem?.ToString()
+                            ?? string.Empty,
+                        cep = LimparNumero(txtCep.Text)
+                    };
+
+                    response = await ApiClient.PostAsync(
                         "api/Auth/cadastro",
                         request);
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
-                    ClienteCadastrado =
-                        true;
+                    ClienteCadastrado = true;
 
                     MessageBox.Show(
-                        "Cliente cadastrado com sucesso!",
+                        ModoEdicao
+                            ? "Cliente atualizado com sucesso!"
+                            : "Cliente cadastrado com sucesso!",
                         "GoCar",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
 
-                    DialogResult =
-                        DialogResult.OK;
-
+                    DialogResult = DialogResult.OK;
                     Close();
-
                     return;
                 }
 
                 string conteudo =
-                    await response
-                        .Content
-                        .ReadAsStringAsync();
+                    await response.Content.ReadAsStringAsync();
 
                 string mensagem =
-                    ObterMensagemErro(
-                        conteudo);
+                    ObterMensagemErro(conteudo);
 
                 MessageBox.Show(
                     mensagem,
-                    "Não foi possível cadastrar",
+                    ModoEdicao
+                        ? "Não foi possível atualizar"
+                        : "Não foi possível cadastrar",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
             }
@@ -862,7 +902,9 @@ namespace GoCar.Desktop.Forms
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Ocorreu um erro ao cadastrar o cliente.\n\n" +
+                    (ModoEdicao
+                        ? "Ocorreu um erro ao atualizar o cliente.\n\n"
+                        : "Ocorreu um erro ao cadastrar o cliente.\n\n") +
                     ex.Message,
                     "Erro",
                     MessageBoxButtons.OK,
@@ -872,16 +914,94 @@ namespace GoCar.Desktop.Forms
             {
                 if (!IsDisposed)
                 {
-                    btnCadastrar.Enabled =
-                        true;
-
-                    btnCancelar.Enabled =
-                        true;
-
+                    btnCadastrar.Enabled = true;
+                    btnCancelar.Enabled = true;
                     btnCadastrar.Text =
-                        "Cadastrar Cliente";
+                        ModoEdicao
+                            ? "Salvar Alterações"
+                            : "Cadastrar Cliente";
                 }
             }
+        }
+
+        private async Task CarregarClienteParaEdicaoAsync()
+        {
+            if (!ModoEdicao)
+                return;
+
+            try
+            {
+                ConfigurarToken();
+
+                ClienteEdicaoResponse? cliente =
+                    await ApiClient.GetAsync<ClienteEdicaoResponse>(
+                        $"api/Clientes/{_clienteId!.Value}");
+
+                if (cliente == null)
+                {
+                    MessageBox.Show(
+                        "Cliente não encontrado.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    DialogResult = DialogResult.Cancel;
+                    Close();
+                    return;
+                }
+
+                _isAtivoAtual = cliente.IsAtivo;
+
+                txtNome.Text = cliente.Nome;
+                txtCpf.Text = cliente.CPF;
+                txtTelefone.Text = cliente.Telefone;
+                txtCnh.Text = cliente.CNH;
+                txtCep.Text = FormatarCep(cliente.CEP);
+                txtEndereco.Text = cliente.Endereco;
+                txtNumero.Text = cliente.Numero;
+                txtBairro.Text = cliente.Bairro;
+                txtCidade.Text = cliente.Cidade;
+
+                if (cliente.DataNascimento >= dtpNascimento.MinDate &&
+                    cliente.DataNascimento <= dtpNascimento.MaxDate)
+                {
+                    dtpNascimento.Value = cliente.DataNascimento;
+                }
+
+                // Na edição precisamos permitir exibir uma CNH que já
+                // esteja próxima do vencimento ou vencida no cadastro.
+                dtpValidadeCnh.MinDate = DateTimePicker.MinimumDateTime;
+
+                if (cliente.DataValidadeCNH >= dtpValidadeCnh.MinDate &&
+                    cliente.DataValidadeCNH <= dtpValidadeCnh.MaxDate)
+                {
+                    dtpValidadeCnh.Value = cliente.DataValidadeCNH;
+                }
+
+                if (cmbCategoriaCnh.Items.Contains(cliente.CategoriaCNH))
+                    cmbCategoriaCnh.SelectedItem = cliente.CategoriaCNH;
+
+                if (cmbEstado.Items.Contains(cliente.Estado))
+                    cmbEstado.SelectedItem = cliente.Estado;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Não foi possível carregar os dados do cliente.\n\n" +
+                    ex.Message,
+                    "GoCar",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                DialogResult = DialogResult.Cancel;
+                Close();
+            }
+        }
+
+        private static void ConfigurarToken()
+        {
+            if (!string.IsNullOrWhiteSpace(DesktopSession.Token))
+                ApiClient.ConfigurarToken(DesktopSession.Token);
         }
 
         // =========================================================
@@ -923,24 +1043,28 @@ namespace GoCar.Desktop.Forms
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(
-                    txtEmail.Text))
+            if (!ModoEdicao)
             {
-                Avisar(
-                    "Informe o e-mail.",
-                    txtEmail);
+                if (string.IsNullOrWhiteSpace(
+                        txtEmail.Text))
+                {
+                    Avisar(
+                        "Informe o e-mail.",
+                        txtEmail);
 
-                return false;
-            }
+                    return false;
+                }
 
-            if (!txtEmail.Text.Contains("@") ||
-                !txtEmail.Text.Contains("."))
-            {
-                Avisar(
-                    "Informe um e-mail válido.",
-                    txtEmail);
+                if (!txtEmail.Text.Contains("@") ||
+                    !txtEmail.Text.Contains("."))
+                {
+                    Avisar(
+                        "Informe um e-mail válido.",
+                        txtEmail);
 
-                return false;
+                    return false;
+                }
+
             }
 
             string telefone =
@@ -967,14 +1091,18 @@ namespace GoCar.Desktop.Forms
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(
-                    txtSenha.Text))
+            if (!ModoEdicao)
             {
-                Avisar(
-                    "Informe uma senha.",
-                    txtSenha);
+                if (string.IsNullOrWhiteSpace(
+                        txtSenha.Text))
+                {
+                    Avisar(
+                        "Informe uma senha.",
+                        txtSenha);
 
-                return false;
+                    return false;
+                }
+
             }
 
             if (string.IsNullOrWhiteSpace(

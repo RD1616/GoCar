@@ -1,4 +1,4 @@
-﻿using GoCar.Application.Interfaces;
+using GoCar.Application.Interfaces;
 using GoCar.Domain.Entities;
 using GoCar.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -9,32 +9,54 @@ namespace GoCar.Infrastructure.Repositories
     {
         private readonly GoCarDbContext _context;
 
-        public ClienteRepository(GoCarDbContext context)
+        public ClienteRepository(
+            GoCarDbContext context)
         {
             _context = context;
         }
 
-        public async Task<IEnumerable<Cliente>> ListarTodosAsync()
+        // =====================================================
+        // LISTAR TODOS
+        // =====================================================
+
+        public async Task<IEnumerable<Cliente>>
+            ListarTodosAsync()
         {
             return await _context.Clientes
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task<Cliente?> ObterPorIdAsync(int id)
+        // =====================================================
+        // OBTER POR ID
+        // =====================================================
+
+        public async Task<Cliente?> ObterPorIdAsync(
+            int id)
         {
             return await _context.Clientes
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public async Task<Cliente?> ObterPorUsuarioIdAsync(int usuarioId)
+        // =====================================================
+        // OBTER POR USUÁRIO
+        // =====================================================
+
+        public async Task<Cliente?> ObterPorUsuarioIdAsync(
+            int usuarioId)
         {
             return await _context.Clientes
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.UsuarioId == usuarioId);
+                .FirstOrDefaultAsync(
+                    c => c.UsuarioId == usuarioId);
         }
 
-        public async Task<Cliente> CriarAsync(Cliente cliente)
+        // =====================================================
+        // CRIAR
+        // =====================================================
+
+        public async Task<Cliente> CriarAsync(
+            Cliente cliente)
         {
             _context.Clientes.Add(cliente);
 
@@ -43,34 +65,30 @@ namespace GoCar.Infrastructure.Repositories
             return cliente;
         }
 
-        public async Task<bool> AtualizarAsync(Cliente cliente)
+        // =====================================================
+        // ATUALIZAR
+        // =====================================================
+
+        public async Task<bool> AtualizarAsync(
+            Cliente cliente)
         {
-            var clienteExistente = await _context.Clientes
-                .FirstOrDefaultAsync(c => c.Id == cliente.Id);
+            var existe = await _context.Clientes
+                .AnyAsync(c => c.Id == cliente.Id);
 
-            if (clienteExistente == null)
+            if (!existe)
                 return false;
-
-            clienteExistente.Nome = cliente.Nome;
-            clienteExistente.CPF = cliente.CPF;
-            clienteExistente.DataNascimento = cliente.DataNascimento;
-            clienteExistente.Telefone = cliente.Telefone;
-            clienteExistente.CNH = cliente.CNH;
-            clienteExistente.CategoriaCNH = cliente.CategoriaCNH;
-            clienteExistente.DataValidadeCNH = cliente.DataValidadeCNH;
-            clienteExistente.Endereco = cliente.Endereco;
-            clienteExistente.Numero = cliente.Numero;
-            clienteExistente.Bairro = cliente.Bairro;
-            clienteExistente.Cidade = cliente.Cidade;
-            clienteExistente.Estado = cliente.Estado;
-            clienteExistente.CEP = cliente.CEP;
 
             await _context.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<bool> ExcluirAsync(int id)
+        // =====================================================
+        // DESATIVAR
+        // =====================================================
+
+        public async Task<bool> ExcluirAsync(
+            int id)
         {
             var cliente = await _context.Clientes
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -79,6 +97,26 @@ namespace GoCar.Infrastructure.Repositories
                 return false;
 
             cliente.IsAtivo = false;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool>
+            ExcluirPermanentementeAsync(int id)
+        {
+            var cliente = await _context.Clientes
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (cliente == null)
+                return false;
+
+            _context.Clientes.Remove(cliente);
 
             await _context.SaveChangesAsync();
 

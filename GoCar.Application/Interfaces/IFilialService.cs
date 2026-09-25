@@ -10,8 +10,14 @@ namespace GoCar.Application.Interfaces
 
         Task<FilialDto> CriarAsync(CriarFilialDto dto);
 
-        Task<bool> AtualizarAsync(int id, AtualizarFilialDto dto);
+        Task<bool> AtualizarAsync(
+            int id,
+            AtualizarFilialDto dto);
 
         Task<bool> ExcluirAsync(int id);
+
+        Task<bool> AtivarAsync(int id);
+
+        Task<bool> ExcluirPermanentementeAsync(int id);
     }
 }

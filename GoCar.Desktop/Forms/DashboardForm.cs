@@ -1828,145 +1828,105 @@ namespace GoCar.Desktop.Forms
         {
             pnlConteudo.Controls.Clear();
 
-            Label lblTitulo =
-                CriarTituloPagina(
-                    "Veículos"
-                );
+            Label lblTitulo = CriarTituloPagina("Veículos");
+            Label lblDescricao = CriarDescricaoPagina(
+                "Gerencie os veículos disponíveis na locadora.");
 
-            Label lblDescricao =
-                CriarDescricaoPagina(
-                    "Gerencie os veículos disponíveis na locadora."
-                );
-
-            TextBox txtBusca =
-                CriarCampoBusca();
-
+            TextBox txtBusca = CriarCampoBusca();
             txtBusca.PlaceholderText =
                 "Pesquisar por modelo, marca ou placa...";
+            txtBusca.Size = new Size(330, 35);
 
-            txtBusca.Size =
-                new Size(
-                    330,
-                    35
-                );
+            ComboBox cmbStatus = new ComboBox
+            {
+                Location = new Point(385, 120),
+                Size = new Size(155, 35),
+                BackColor = Color.FromArgb(18, 8, 30),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("Segoe UI", 10)
+            };
 
-            ComboBox cmbStatus =
-                new ComboBox
-                {
-                    Location =
-                        new Point(
-                            385,
-                            120
-                        ),
-
-                    Size =
-                        new Size(
-                            155,
-                            35
-                        ),
-
-                    BackColor =
-                        Color.FromArgb(
-                            18,
-                            8,
-                            30
-                        ),
-
-                    ForeColor =
-                        Color.White,
-
-                    FlatStyle =
-                        FlatStyle.Flat,
-
-                    DropDownStyle =
-                        ComboBoxStyle.DropDownList,
-
-                    Font =
-                        new Font(
-                            "Segoe UI",
-                            10
-                        )
-                };
-
-            cmbStatus.Items.AddRange(
-                new object[]
-                {
-                    "Todos os status",
-                    "Ativos",
-                    "Inativos"
-                }
-            );
-
+            cmbStatus.Items.AddRange(new object[]
+            {
+                "Todos os status",
+                "Ativos",
+                "Inativos"
+            });
             cmbStatus.SelectedIndex = 0;
 
             Button btnNovoVeiculo =
-                CriarBotaoNovo(
-                    "+ Novo Veículo",
-                    560,
-                    160
-                );
+                CriarBotaoNovo("+ Novo Veículo", 560, 160);
 
-            DataGridView dgvVeiculos =
-                CriarTabela();
+            DataGridView dgvVeiculos = CriarTabela();
 
-            dgvVeiculos.Columns.Add(
-                "Modelo",
-                "Modelo"
-            );
+            dgvVeiculos.Columns.Add("Modelo", "Modelo");
+            dgvVeiculos.Columns.Add("Marca", "Marca");
+            dgvVeiculos.Columns.Add("Placa", "Placa");
+            dgvVeiculos.Columns.Add("Ano", "Ano");
+            dgvVeiculos.Columns.Add("Km", "Km atual");
+            dgvVeiculos.Columns.Add("Diaria", "Diária");
+            dgvVeiculos.Columns.Add("Status", "Status");
 
-            dgvVeiculos.Columns.Add(
-                "Marca",
-                "Marca"
-            );
+            var colunaEditar = new DataGridViewButtonColumn
+            {
+                Name = "Editar",
+                HeaderText = "Editar",
+                Text = "Editar",
+                UseColumnTextForButtonValue = true,
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaEditar.DefaultCellStyle.BackColor =
+                Color.FromArgb(83, 38, 135);
+            colunaEditar.DefaultCellStyle.ForeColor = Color.White;
+            colunaEditar.FillWeight = 70;
+            dgvVeiculos.Columns.Add(colunaEditar);
 
-            dgvVeiculos.Columns.Add(
-                "Placa",
-                "Placa"
-            );
+            var colunaAcao = new DataGridViewButtonColumn
+            {
+                Name = "AcaoStatus",
+                HeaderText = "Ação",
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaAcao.DefaultCellStyle.BackColor =
+                Color.FromArgb(105, 35, 55);
+            colunaAcao.DefaultCellStyle.ForeColor = Color.White;
+            colunaAcao.FillWeight = 85;
+            dgvVeiculos.Columns.Add(colunaAcao);
 
-            dgvVeiculos.Columns.Add(
-                "Ano",
-                "Ano"
-            );
+            pnlConteudo.Controls.Add(lblTitulo);
+            pnlConteudo.Controls.Add(lblDescricao);
+            pnlConteudo.Controls.Add(txtBusca);
+            pnlConteudo.Controls.Add(cmbStatus);
+            pnlConteudo.Controls.Add(btnNovoVeiculo);
+            pnlConteudo.Controls.Add(dgvVeiculos);
 
-            dgvVeiculos.Columns.Add(
-                "Km",
-                "Km atual"
-            );
+            void AplicarFiltros()
+            {
+                string busca =
+                    txtBusca.Text.Trim().ToLowerInvariant();
 
-            dgvVeiculos.Columns.Add(
-                "Diaria",
-                "Diária"
-            );
+                IEnumerable<VeiculoResponse> filtrados =
+                    veiculosCarregados;
 
-            dgvVeiculos.Columns.Add(
-                "Status",
-                "Status"
-            );
+                if (!string.IsNullOrWhiteSpace(busca))
+                {
+                    filtrados = filtrados.Where(v =>
+                        v.Modelo.ToLowerInvariant().Contains(busca) ||
+                        v.Marca.ToLowerInvariant().Contains(busca) ||
+                        v.Placa.ToLowerInvariant().Contains(busca));
+                }
 
-            pnlConteudo.Controls.Add(
-                lblTitulo
-            );
+                if (cmbStatus.SelectedIndex == 1)
+                    filtrados = filtrados.Where(v => v.IsAtivo);
+                else if (cmbStatus.SelectedIndex == 2)
+                    filtrados = filtrados.Where(v => !v.IsAtivo);
 
-            pnlConteudo.Controls.Add(
-                lblDescricao
-            );
-
-            pnlConteudo.Controls.Add(
-                txtBusca
-            );
-
-            pnlConteudo.Controls.Add(
-                cmbStatus
-            );
-
-            pnlConteudo.Controls.Add(
-                btnNovoVeiculo
-            );
-
-            pnlConteudo.Controls.Add(
-                dgvVeiculos
-            );
+                PreencherTabelaVeiculos(
+                    dgvVeiculos,
+                    filtrados.ToList());
+            }
 
             async Task CarregarVeiculosAsync()
             {
@@ -1975,132 +1935,181 @@ namespace GoCar.Desktop.Forms
                     ConfigurarToken();
 
                     List<VeiculoResponse>? veiculos =
-                        await ApiClient
-                            .GetAsync<
-                                List<VeiculoResponse>
-                            >(
-                                "api/Veiculos"
-                            );
+                        await ApiClient.GetAsync<List<VeiculoResponse>>(
+                            "api/Veiculos");
 
                     veiculosCarregados =
-                        veiculos ??
-                        new List<VeiculoResponse>();
+                        veiculos ?? new List<VeiculoResponse>();
 
-                    PreencherTabelaVeiculos(
-                        dgvVeiculos,
-                        veiculosCarregados
-                    );
+                    AplicarFiltros();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(
-                        "Não foi possível carregar " +
-                        "os veículos.\n\n" +
+                        "Não foi possível carregar os veículos.\n\n" +
                         ex.Message,
-
                         "GoCar",
-
                         MessageBoxButtons.OK,
-
-                        MessageBoxIcon.Warning
-                    );
+                        MessageBoxIcon.Warning);
                 }
             }
 
-            btnNovoVeiculo.Click +=
-                async (s, e) =>
+            btnNovoVeiculo.Click += async (s, e) =>
+            {
+                using (NovoVeiculoForm form = new NovoVeiculoForm())
                 {
-                    using (
-                        NovoVeiculoForm form =
-                            new NovoVeiculoForm()
-                    )
+                    DialogResult resultado = form.ShowDialog(this);
+
+                    if (resultado == DialogResult.OK &&
+                        form.VeiculoCadastrado)
+                    {
+                        await CarregarVeiculosAsync();
+                    }
+                }
+            };
+
+            dgvVeiculos.CellContentClick += async (s, e) =>
+            {
+                if (e.RowIndex < 0)
+                    return;
+
+                if (dgvVeiculos.Rows[e.RowIndex].Tag
+                    is not VeiculoResponse veiculo)
+                    return;
+
+                string coluna =
+                    dgvVeiculos.Columns[e.ColumnIndex].Name;
+
+                if (coluna == "Editar")
+                {
+                    using (NovoVeiculoForm form =
+                        new NovoVeiculoForm(veiculo.Id))
                     {
                         DialogResult resultado =
-                            form.ShowDialog(
-                                this
-                            );
+                            form.ShowDialog(this);
 
-                        if (
-                            resultado ==
-                                DialogResult.OK
-                            &&
-                            form.VeiculoCadastrado
-                        )
+                        if (resultado == DialogResult.OK &&
+                            form.VeiculoCadastrado)
                         {
                             await CarregarVeiculosAsync();
                         }
                     }
-                };
 
-            void AplicarFiltros()
-            {
-                string busca =
-                    txtBusca.Text
-                        .Trim()
-                        .ToLowerInvariant();
-
-                IEnumerable<VeiculoResponse> filtrados =
-                    veiculosCarregados;
-
-                if (
-                    !string.IsNullOrWhiteSpace(
-                        busca
-                    )
-                )
-                {
-                    filtrados =
-                        filtrados.Where(
-                            v =>
-                                v.Modelo
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                                ||
-                                v.Marca
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                                ||
-                                v.Placa
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                        );
+                    return;
                 }
 
-                if (
-                    cmbStatus.SelectedIndex == 1
-                )
+                if (coluna != "AcaoStatus")
+                    return;
+
+                if (veiculo.IsAtivo)
                 {
-                    filtrados =
-                        filtrados.Where(
-                            v => v.IsAtivo
-                        );
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja realmente desativar o veículo " +
+                        $"{veiculo.Marca} {veiculo.Modelo} - " +
+                        $"{veiculo.Placa}?",
+                        "GoCar",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        var response = await ApiClient.DeleteAsync(
+                            $"api/Veiculos/{veiculo.Id}");
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível desativar o veículo.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Veículo desativado com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarVeiculosAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao desativar veículo.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
                 }
-                else if (
-                    cmbStatus.SelectedIndex == 2
-                )
+                else
                 {
-                    filtrados =
-                        filtrados.Where(
-                            v => !v.IsAtivo
-                        );
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja reativar o veículo " +
+                        $"{veiculo.Marca} {veiculo.Modelo} - " +
+                        $"{veiculo.Placa}?",
+                        "GoCar",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        var response = await ApiClient.PutAsync(
+                            $"api/Veiculos/{veiculo.Id}/ativar",
+                            new { });
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível reativar o veículo.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Veículo reativado com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarVeiculosAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao reativar veículo.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
                 }
+            };
 
-                PreencherTabelaVeiculos(
-                    dgvVeiculos,
-                    filtrados.ToList()
-                );
-            }
-
-            txtBusca.TextChanged +=
-                (s, e) =>
-                {
-                    AplicarFiltros();
-                };
-
-            cmbStatus.SelectedIndexChanged +=
-                (s, e) =>
-                {
-                    AplicarFiltros();
-                };
+            txtBusca.TextChanged += (s, e) => AplicarFiltros();
+            cmbStatus.SelectedIndexChanged += (s, e) => AplicarFiltros();
 
             await CarregarVeiculosAsync();
         }
@@ -2116,45 +2125,39 @@ namespace GoCar.Desktop.Forms
             tabela.Rows.Clear();
 
             CultureInfo cultura =
-                new CultureInfo(
-                    "pt-BR"
-                );
+                new CultureInfo("pt-BR");
 
-            foreach (
-                VeiculoResponse veiculo
-                in veiculos
-            )
+            foreach (VeiculoResponse veiculo in veiculos)
             {
                 string diaria =
-                    veiculo
-                        .ValorDiaria
-                        .ToString(
-                            "C2",
-                            cultura
-                        );
+                    veiculo.ValorDiaria.ToString("C2", cultura);
 
                 string km =
-                    veiculo
-                        .KmAtual
-                        .ToString(
-                            "N0",
-                            cultura
-                        );
+                    veiculo.KmAtual.ToString("N0", cultura);
 
                 string status =
-                    veiculo.IsAtivo
-                        ? "Ativo"
-                        : "Inativo";
+                    veiculo.IsAtivo ? "Ativo" : "Inativo";
 
-                tabela.Rows.Add(
+                int indice = tabela.Rows.Add(
                     veiculo.Modelo,
                     veiculo.Marca,
                     veiculo.Placa,
                     veiculo.AnoModelo,
                     km,
                     diaria,
-                    status
-                );
+                    status,
+                    "Editar",
+                    veiculo.IsAtivo ? "Desativar" : "Reativar");
+
+                tabela.Rows[indice].Tag = veiculo;
+
+                if (!veiculo.IsAtivo)
+                {
+                    tabela.Rows[indice]
+                        .Cells["AcaoStatus"]
+                        .Style.BackColor =
+                        Color.FromArgb(38, 110, 72);
+                }
             }
         }
 
@@ -2166,73 +2169,118 @@ namespace GoCar.Desktop.Forms
         {
             pnlConteudo.Controls.Clear();
 
-            Label lblTitulo =
-                CriarTituloPagina(
-                    "Categorias"
-                );
+            Label lblTitulo = CriarTituloPagina("Categorias");
+            Label lblDescricao = CriarDescricaoPagina(
+                "Gerencie as categorias de veículos da locadora.");
 
-            Label lblDescricao =
-                CriarDescricaoPagina(
-                    "Gerencie as categorias de veículos da locadora."
-                );
+            TextBox txtBusca = CriarCampoBusca();
+            txtBusca.PlaceholderText = "Pesquisar por nome ou descrição...";
+            txtBusca.Size = new Size(330, 35);
 
-            TextBox txtBusca =
-                CriarCampoBusca();
+            ComboBox cmbStatus = new ComboBox
+            {
+                Location = new Point(385, 120),
+                Size = new Size(155, 35),
+                BackColor = Color.FromArgb(18, 8, 30),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("Segoe UI", 10)
+            };
+
+            cmbStatus.Items.AddRange(new object[]
+            {
+                "Todos os status",
+                "Ativos",
+                "Inativos"
+            });
+            cmbStatus.SelectedIndex = 0;
 
             Button btnNovaCategoria =
-                CriarBotaoNovo(
-                    "+ Nova Categoria",
-                    560,
-                    170
-                );
+                CriarBotaoNovo("+ Nova Categoria", 560, 170);
 
-            DataGridView dgvCategorias =
-                CriarTabela();
+            DataGridView dgvCategorias = CriarTabela();
 
-            dgvCategorias.Columns.Add(
-                "Nome",
-                "Nome"
-            );
+            dgvCategorias.Columns.Add("Nome", "Nome");
+            dgvCategorias.Columns.Add("Descricao", "Descrição");
+            dgvCategorias.Columns.Add("Diaria", "Diária Base");
+            dgvCategorias.Columns.Add("KmLivre", "Km Livre");
+            dgvCategorias.Columns.Add("Status", "Status");
 
-            dgvCategorias.Columns.Add(
-                "Descricao",
-                "Descrição"
-            );
+            var colunaEditar = new DataGridViewButtonColumn
+            {
+                Name = "Editar",
+                HeaderText = "Editar",
+                Text = "Editar",
+                UseColumnTextForButtonValue = true,
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaEditar.DefaultCellStyle.BackColor =
+                Color.FromArgb(83, 38, 135);
+            colunaEditar.DefaultCellStyle.ForeColor = Color.White;
+            colunaEditar.FillWeight = 70;
+            dgvCategorias.Columns.Add(colunaEditar);
 
-            dgvCategorias.Columns.Add(
-                "Diaria",
-                "Diária Base"
-            );
+            var colunaAcao = new DataGridViewButtonColumn
+            {
+                Name = "AcaoStatus",
+                HeaderText = "Ação",
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaAcao.DefaultCellStyle.BackColor =
+                Color.FromArgb(105, 35, 55);
+            colunaAcao.DefaultCellStyle.ForeColor = Color.White;
+            colunaAcao.FillWeight = 85;
+            dgvCategorias.Columns.Add(colunaAcao);
 
-            dgvCategorias.Columns.Add(
-                "KmLivre",
-                "Km Livre"
-            );
+            var colunaExcluir = new DataGridViewButtonColumn
+            {
+                Name = "Excluir",
+                HeaderText = "Excluir",
+                Text = "Excluir",
+                UseColumnTextForButtonValue = true,
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaExcluir.DefaultCellStyle.BackColor =
+                Color.FromArgb(150, 35, 45);
+            colunaExcluir.DefaultCellStyle.ForeColor = Color.White;
+            colunaExcluir.FillWeight = 70;
+            dgvCategorias.Columns.Add(colunaExcluir);
 
-            dgvCategorias.Columns.Add(
-                "Status",
-                "Status"
-            );
+            pnlConteudo.Controls.Add(lblTitulo);
+            pnlConteudo.Controls.Add(lblDescricao);
+            pnlConteudo.Controls.Add(txtBusca);
+            pnlConteudo.Controls.Add(cmbStatus);
+            pnlConteudo.Controls.Add(btnNovaCategoria);
+            pnlConteudo.Controls.Add(dgvCategorias);
 
-            pnlConteudo.Controls.Add(
-                lblTitulo
-            );
+            void AplicarFiltros()
+            {
+                string busca = txtBusca.Text
+                    .Trim()
+                    .ToLowerInvariant();
 
-            pnlConteudo.Controls.Add(
-                lblDescricao
-            );
+                IEnumerable<CategoriaResponse> filtradas =
+                    categoriasCarregadas;
 
-            pnlConteudo.Controls.Add(
-                txtBusca
-            );
+                if (!string.IsNullOrWhiteSpace(busca))
+                {
+                    filtradas = filtradas.Where(c =>
+                        (c.Nome ?? string.Empty)
+                            .ToLowerInvariant().Contains(busca) ||
+                        (c.Descricao ?? string.Empty)
+                            .ToLowerInvariant().Contains(busca));
+                }
 
-            pnlConteudo.Controls.Add(
-                btnNovaCategoria
-            );
+                if (cmbStatus.SelectedIndex == 1)
+                    filtradas = filtradas.Where(c => c.IsAtivo);
+                else if (cmbStatus.SelectedIndex == 2)
+                    filtradas = filtradas.Where(c => !c.IsAtivo);
 
-            pnlConteudo.Controls.Add(
-                dgvCategorias
-            );
+                PreencherTabelaCategorias(
+                    dgvCategorias,
+                    filtradas.ToList());
+            }
 
             async Task CarregarCategoriasAsync()
             {
@@ -2241,91 +2289,224 @@ namespace GoCar.Desktop.Forms
                     ConfigurarToken();
 
                     List<CategoriaResponse>? categorias =
-                        await ApiClient
-                            .GetAsync<
-                                List<CategoriaResponse>
-                            >(
-                                "api/Categorias"
-                            );
+                        await ApiClient.GetAsync<List<CategoriaResponse>>(
+                            "api/Categorias");
 
                     categoriasCarregadas =
-                        categorias ??
-                        new List<CategoriaResponse>();
+                        categorias ?? new List<CategoriaResponse>();
 
-                    PreencherTabelaCategorias(
-                        dgvCategorias,
-                        categoriasCarregadas
-                    );
+                    AplicarFiltros();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(
-                        "Não foi possível carregar " +
-                        "as categorias.\n\n" +
+                        "Não foi possível carregar as categorias.\n\n" +
                         ex.Message,
-
                         "GoCar",
-
                         MessageBoxButtons.OK,
-
-                        MessageBoxIcon.Warning
-                    );
+                        MessageBoxIcon.Warning);
                 }
             }
 
-            btnNovaCategoria.Click +=
-                async (s, e) =>
-                {
-                    bool cadastrou =
-                        await AbrirCadastroCategoria();
+            btnNovaCategoria.Click += async (s, e) =>
+            {
+                bool cadastrou = await AbrirCadastroCategoria();
 
-                    if (cadastrou)
+                if (cadastrou)
+                    await CarregarCategoriasAsync();
+            };
+
+            dgvCategorias.CellContentClick += async (s, e) =>
+            {
+                if (e.RowIndex < 0 || e.ColumnIndex < 0)
+                    return;
+
+                if (dgvCategorias.Rows[e.RowIndex].Tag
+                    is not CategoriaResponse categoria)
+                    return;
+
+                string coluna =
+                    dgvCategorias.Columns[e.ColumnIndex].Name;
+
+                if (coluna == "Editar")
+                {
+                    bool atualizou =
+                        await AbrirCadastroCategoria(categoria);
+
+                    if (atualizou)
+                        await CarregarCategoriasAsync();
+
+                    return;
+                }
+
+                if (coluna == "Excluir")
+                {
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja excluir permanentemente a categoria " +
+                        $"\"{categoria.Nome}\"?\n\n" +
+                        "Esta ação não poderá ser desfeita.",
+                        "GoCar - Exclusão permanente",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
                     {
+                        ConfigurarToken();
+
+                        HttpResponseMessage response =
+                            await ApiClient.DeleteAsync(
+                                $"api/Categorias/{categoria.Id}/permanente");
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível excluir a categoria.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Categoria excluída permanentemente com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
                         await CarregarCategoriasAsync();
                     }
-                };
-
-            txtBusca.TextChanged +=
-                (s, e) =>
-                {
-                    string busca =
-                        txtBusca.Text
-                            .Trim()
-                            .ToLowerInvariant();
-
-                    if (
-                        string.IsNullOrWhiteSpace(
-                            busca
-                        )
-                    )
+                    catch (Exception ex)
                     {
-                        PreencherTabelaCategorias(
-                            dgvCategorias,
-                            categoriasCarregadas
-                        );
-
-                        return;
+                        MessageBox.Show(
+                            "Erro ao excluir categoria.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
                     }
 
-                    List<CategoriaResponse> filtradas =
-                        categoriasCarregadas
-                            .Where(
-                                c =>
-                                    c.Nome
-                                        .ToLowerInvariant()
-                                        .Contains(busca)
-                                    ||
-                                    c.Descricao
-                                        .ToLowerInvariant()
-                                        .Contains(busca)
-                            )
-                            .ToList();
+                    return;
+                }
 
-                    PreencherTabelaCategorias(
-                        dgvCategorias,
-                        filtradas
-                    );
-                };
+                if (coluna != "AcaoStatus")
+                    return;
+
+                if (categoria.IsAtivo)
+                {
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja realmente desativar a categoria " +
+                        $"\"{categoria.Nome}\"?",
+                        "GoCar",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        HttpResponseMessage response =
+                            await ApiClient.DeleteAsync(
+                                $"api/Categorias/{categoria.Id}");
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível desativar a categoria.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Categoria desativada com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarCategoriasAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao desativar categoria.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja reativar a categoria " +
+                        $"\"{categoria.Nome}\"?",
+                        "GoCar",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        HttpResponseMessage response =
+                            await ApiClient.PutAsync(
+                                $"api/Categorias/{categoria.Id}/ativar",
+                                new { });
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível reativar a categoria.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Categoria reativada com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarCategoriasAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao reativar categoria.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
+            };
+
+            txtBusca.TextChanged += (s, e) => AplicarFiltros();
+            cmbStatus.SelectedIndexChanged += (s, e) => AplicarFiltros();
 
             await CarregarCategoriasAsync();
         }
@@ -2341,38 +2522,21 @@ namespace GoCar.Desktop.Forms
             tabela.Rows.Clear();
 
             CultureInfo cultura =
-                new CultureInfo(
-                    "pt-BR"
-                );
+                new CultureInfo("pt-BR");
 
-            foreach (
-                CategoriaResponse categoria
-                in categorias
-            )
+            foreach (CategoriaResponse categoria in categorias)
             {
-                tabela.Rows.Add(
+                int indice = tabela.Rows.Add(
                     categoria.Nome,
-
                     categoria.Descricao,
+                    categoria.DiariaBase.ToString("C2", cultura),
+                    categoria.KmLivre.ToString("N0", cultura),
+                    categoria.IsAtivo ? "Ativo" : "Inativo",
+                    "Editar",
+                    categoria.IsAtivo ? "Desativar" : "Reativar",
+                    "Excluir");
 
-                    categoria
-                        .DiariaBase
-                        .ToString(
-                            "C2",
-                            cultura
-                        ),
-
-                    categoria
-                        .KmLivre
-                        .ToString(
-                            "N0",
-                            cultura
-                        ),
-
-                    categoria.IsAtivo
-                        ? "Ativo"
-                        : "Inativo"
-                );
+                tabela.Rows[indice].Tag = categoria;
             }
         }
 
@@ -2387,9 +2551,34 @@ namespace GoCar.Desktop.Forms
             Label lblTitulo = CriarTituloPagina("Filiais");
             Label lblDescricao = CriarDescricaoPagina(
                 "Gerencie as unidades da locadora.");
+
             TextBox txtBusca = CriarCampoBusca();
+            txtBusca.PlaceholderText =
+                "Pesquisar por nome, CNPJ, cidade ou estado...";
+            txtBusca.Size = new Size(330, 35);
+
+            ComboBox cmbStatus = new ComboBox
+            {
+                Location = new Point(385, 120),
+                Size = new Size(155, 35),
+                BackColor = Color.FromArgb(18, 8, 30),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("Segoe UI", 10)
+            };
+
+            cmbStatus.Items.AddRange(new object[]
+            {
+                "Todos os status",
+                "Ativas",
+                "Inativas"
+            });
+            cmbStatus.SelectedIndex = 0;
+
             Button btnNovaFilial = CriarBotaoNovo(
                 "+ Nova Filial", 560, 160);
+
             DataGridView dgvFiliais = CriarTabela();
 
             dgvFiliais.Columns.Add("Nome", "Nome");
@@ -2400,11 +2589,83 @@ namespace GoCar.Desktop.Forms
             dgvFiliais.Columns.Add("CEP", "CEP");
             dgvFiliais.Columns.Add("Status", "Status");
 
+            var colunaEditar = new DataGridViewButtonColumn
+            {
+                Name = "Editar",
+                HeaderText = "Editar",
+                Text = "Editar",
+                UseColumnTextForButtonValue = true,
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaEditar.DefaultCellStyle.BackColor =
+                Color.FromArgb(83, 38, 135);
+            colunaEditar.DefaultCellStyle.ForeColor = Color.White;
+            colunaEditar.FillWeight = 70;
+            dgvFiliais.Columns.Add(colunaEditar);
+
+            var colunaAcao = new DataGridViewButtonColumn
+            {
+                Name = "AcaoStatus",
+                HeaderText = "Ação",
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaAcao.DefaultCellStyle.BackColor =
+                Color.FromArgb(105, 35, 55);
+            colunaAcao.DefaultCellStyle.ForeColor = Color.White;
+            colunaAcao.FillWeight = 85;
+            dgvFiliais.Columns.Add(colunaAcao);
+
+            var colunaExcluir = new DataGridViewButtonColumn
+            {
+                Name = "ExcluirPermanentemente",
+                HeaderText = "Excluir",
+                Text = "Excluir",
+                UseColumnTextForButtonValue = true,
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaExcluir.DefaultCellStyle.BackColor =
+                Color.FromArgb(150, 35, 45);
+            colunaExcluir.DefaultCellStyle.ForeColor = Color.White;
+            colunaExcluir.FillWeight = 75;
+            dgvFiliais.Columns.Add(colunaExcluir);
+
             pnlConteudo.Controls.Add(lblTitulo);
             pnlConteudo.Controls.Add(lblDescricao);
             pnlConteudo.Controls.Add(txtBusca);
+            pnlConteudo.Controls.Add(cmbStatus);
             pnlConteudo.Controls.Add(btnNovaFilial);
             pnlConteudo.Controls.Add(dgvFiliais);
+
+            void AplicarFiltros()
+            {
+                string busca = txtBusca.Text
+                    .Trim()
+                    .ToLowerInvariant();
+
+                IEnumerable<FilialResponse> resultado =
+                    filiaisCarregadas;
+
+                if (!string.IsNullOrWhiteSpace(busca))
+                {
+                    resultado = resultado.Where(f =>
+                        (f.Nome ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (f.CNPJ ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (f.Telefone ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (f.Email ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (f.Cidade ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (f.Estado ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (f.CEP ?? string.Empty).ToLowerInvariant().Contains(busca));
+                }
+
+                if (cmbStatus.SelectedIndex == 1)
+                    resultado = resultado.Where(f => f.IsAtivo);
+                else if (cmbStatus.SelectedIndex == 2)
+                    resultado = resultado.Where(f => !f.IsAtivo);
+
+                PreencherTabelaFiliais(
+                    dgvFiliais,
+                    resultado.ToList());
+            }
 
             async Task CarregarFiliaisAsync()
             {
@@ -2419,8 +2680,7 @@ namespace GoCar.Desktop.Forms
                     filiaisCarregadas =
                         filiais ?? new List<FilialResponse>();
 
-                    PreencherTabelaFiliais(
-                        dgvFiliais, filiaisCarregadas);
+                    AplicarFiltros();
                 }
                 catch (Exception ex)
                 {
@@ -2445,29 +2705,200 @@ namespace GoCar.Desktop.Forms
                 }
             };
 
-            txtBusca.TextChanged += (s, e) =>
+            dgvFiliais.CellContentClick += async (s, e) =>
             {
-                string busca = txtBusca.Text
-                    .Trim()
-                    .ToLowerInvariant();
+                if (e.RowIndex < 0)
+                    return;
 
-                IEnumerable<FilialResponse> resultado =
-                    filiaisCarregadas;
+                if (dgvFiliais.Rows[e.RowIndex].Tag
+                    is not FilialResponse filial)
+                    return;
 
-                if (!string.IsNullOrWhiteSpace(busca))
+                string coluna =
+                    dgvFiliais.Columns[e.ColumnIndex].Name;
+
+                if (coluna == "Editar")
                 {
-                    resultado = filiaisCarregadas.Where(f =>
-                        (f.Nome ?? string.Empty).ToLowerInvariant().Contains(busca) ||
-                        (f.CNPJ ?? string.Empty).ToLowerInvariant().Contains(busca) ||
-                        (f.Telefone ?? string.Empty).ToLowerInvariant().Contains(busca) ||
-                        (f.Email ?? string.Empty).ToLowerInvariant().Contains(busca) ||
-                        (f.Cidade ?? string.Empty).ToLowerInvariant().Contains(busca) ||
-                        (f.Estado ?? string.Empty).ToLowerInvariant().Contains(busca) ||
-                        (f.CEP ?? string.Empty).ToLowerInvariant().Contains(busca));
+                    using NovaFilialForm form =
+                        new NovaFilialForm(filial.Id);
+
+                    DialogResult resultado =
+                        form.ShowDialog(this);
+
+                    if (resultado == DialogResult.OK &&
+                        form.FilialCadastrada)
+                    {
+                        await CarregarFiliaisAsync();
+                    }
+
+                    return;
                 }
 
-                PreencherTabelaFiliais(dgvFiliais, resultado);
+                if (coluna == "AcaoStatus")
+                {
+                    if (filial.IsAtivo)
+                    {
+                        DialogResult confirmar = MessageBox.Show(
+                            $"Deseja realmente desativar a filial {filial.Nome}?",
+                            "GoCar",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question);
+
+                        if (confirmar != DialogResult.Yes)
+                            return;
+
+                        try
+                        {
+                            ConfigurarToken();
+
+                            HttpResponseMessage response =
+                                await ApiClient.DeleteAsync(
+                                    $"api/Filiais/{filial.Id}");
+
+                            if (!response.IsSuccessStatusCode)
+                            {
+                                string erro =
+                                    await response.Content.ReadAsStringAsync();
+
+                                MessageBox.Show(
+                                    "Não foi possível desativar a filial.\n\n" +
+                                    erro,
+                                    "GoCar",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error);
+                                return;
+                            }
+
+                            MessageBox.Show(
+                                "Filial desativada com sucesso!",
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+
+                            await CarregarFiliaisAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(
+                                "Erro ao desativar filial.\n\n" +
+                                ex.Message,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                        }
+                    }
+                    else
+                    {
+                        DialogResult confirmar = MessageBox.Show(
+                            $"Deseja reativar a filial {filial.Nome}?",
+                            "GoCar",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question);
+
+                        if (confirmar != DialogResult.Yes)
+                            return;
+
+                        try
+                        {
+                            ConfigurarToken();
+
+                            HttpResponseMessage response =
+                                await ApiClient.PutAsync(
+                                    $"api/Filiais/{filial.Id}/ativar",
+                                    new { });
+
+                            if (!response.IsSuccessStatusCode)
+                            {
+                                string erro =
+                                    await response.Content.ReadAsStringAsync();
+
+                                MessageBox.Show(
+                                    "Não foi possível reativar a filial.\n\n" +
+                                    erro,
+                                    "GoCar",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error);
+                                return;
+                            }
+
+                            MessageBox.Show(
+                                "Filial reativada com sucesso!",
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+
+                            await CarregarFiliaisAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(
+                                "Erro ao reativar filial.\n\n" +
+                                ex.Message,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                        }
+                    }
+
+                    return;
+                }
+
+                if (coluna == "ExcluirPermanentemente")
+                {
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja excluir PERMANENTEMENTE a filial {filial.Nome}?\n\n" +
+                        "Esta ação não poderá ser desfeita.",
+                        "Excluir filial permanentemente",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        HttpResponseMessage response =
+                            await ApiClient.DeleteAsync(
+                                $"api/Filiais/{filial.Id}/permanente");
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível excluir permanentemente a filial.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Filial excluída permanentemente com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarFiliaisAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao excluir permanentemente a filial.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
             };
+
+            txtBusca.TextChanged += (s, e) => AplicarFiltros();
+            cmbStatus.SelectedIndexChanged += (s, e) => AplicarFiltros();
 
             await CarregarFiliaisAsync();
         }
@@ -2484,14 +2915,19 @@ namespace GoCar.Desktop.Forms
                     ? filial.Cidade
                     : $"{filial.Cidade} - {filial.Estado}";
 
-                tabela.Rows.Add(
+                int indice = tabela.Rows.Add(
                     filial.Nome,
                     FormatarCnpj(filial.CNPJ),
                     FormatarTelefone(filial.Telefone),
                     filial.Email,
                     cidade,
                     FormatarCep(filial.CEP),
-                    filial.IsAtivo ? "Ativo" : "Inativo");
+                    filial.IsAtivo ? "Ativo" : "Inativo",
+                    "Editar",
+                    filial.IsAtivo ? "Desativar" : "Reativar",
+                    "Excluir");
+
+                tabela.Rows[indice].Tag = filial;
             }
         }
 
@@ -2543,10 +2979,26 @@ namespace GoCar.Desktop.Forms
                 "Pesquisar por nome, CPF, telefone, CNH ou cidade...";
 
             txtBusca.Size =
-                new Size(
-                    430,
-                    35
-                );
+                new Size(330, 35);
+
+            ComboBox cmbStatus = new ComboBox
+            {
+                Location = new Point(385, 120),
+                Size = new Size(155, 35),
+                BackColor = Color.FromArgb(18, 8, 30),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("Segoe UI", 10)
+            };
+
+            cmbStatus.Items.AddRange(new object[]
+            {
+                "Todos os status",
+                "Ativos",
+                "Inativos"
+            });
+            cmbStatus.SelectedIndex = 0;
 
             Button btnNovoCliente =
                 CriarBotaoNovo(
@@ -2558,116 +3010,74 @@ namespace GoCar.Desktop.Forms
             DataGridView dgvClientes =
                 CriarTabela();
 
-            dgvClientes.Columns.Add(
-                "Nome",
-                "Nome"
-            );
+            dgvClientes.Columns.Add("Nome", "Nome");
+            dgvClientes.Columns.Add("CPF", "CPF");
+            dgvClientes.Columns.Add("Telefone", "Telefone");
+            dgvClientes.Columns.Add("CNH", "CNH");
+            dgvClientes.Columns.Add("Categoria", "Categoria CNH");
+            dgvClientes.Columns.Add("Cidade", "Cidade");
+            dgvClientes.Columns.Add("Status", "Status");
 
-            dgvClientes.Columns.Add(
-                "CPF",
-                "CPF"
-            );
+            var colunaEditar = new DataGridViewButtonColumn
+            {
+                Name = "Editar",
+                HeaderText = "Editar",
+                Text = "Editar",
+                UseColumnTextForButtonValue = true,
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaEditar.DefaultCellStyle.BackColor =
+                Color.FromArgb(83, 38, 135);
+            colunaEditar.DefaultCellStyle.ForeColor = Color.White;
+            colunaEditar.FillWeight = 70;
+            dgvClientes.Columns.Add(colunaEditar);
 
-            dgvClientes.Columns.Add(
-                "Telefone",
-                "Telefone"
-            );
+            var colunaAcao = new DataGridViewButtonColumn
+            {
+                Name = "AcaoStatus",
+                HeaderText = "Ação",
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaAcao.DefaultCellStyle.BackColor =
+                Color.FromArgb(105, 35, 55);
+            colunaAcao.DefaultCellStyle.ForeColor = Color.White;
+            colunaAcao.FillWeight = 85;
+            dgvClientes.Columns.Add(colunaAcao);
 
-            dgvClientes.Columns.Add(
-                "CNH",
-                "CNH"
-            );
-
-            dgvClientes.Columns.Add(
-                "Categoria",
-                "Categoria CNH"
-            );
-
-            dgvClientes.Columns.Add(
-                "Cidade",
-                "Cidade"
-            );
-
-            dgvClientes.Columns.Add(
-                "Status",
-                "Status"
-            );
-
-            pnlConteudo.Controls.Add(
-                lblTitulo
-            );
-
-            pnlConteudo.Controls.Add(
-                lblDescricao
-            );
-
-            pnlConteudo.Controls.Add(
-                txtBusca
-            );
-
-            pnlConteudo.Controls.Add(
-                btnNovoCliente
-            );
-
-            pnlConteudo.Controls.Add(
-                dgvClientes
-            );
+            pnlConteudo.Controls.Add(lblTitulo);
+            pnlConteudo.Controls.Add(lblDescricao);
+            pnlConteudo.Controls.Add(txtBusca);
+            pnlConteudo.Controls.Add(cmbStatus);
+            pnlConteudo.Controls.Add(btnNovoCliente);
+            pnlConteudo.Controls.Add(dgvClientes);
 
             void AplicarFiltro()
             {
                 string busca =
-                    txtBusca.Text
-                        .Trim()
-                        .ToLowerInvariant();
+                    txtBusca.Text.Trim().ToLowerInvariant();
 
-                if (
-                    string.IsNullOrWhiteSpace(
-                        busca
-                    )
-                )
+                IEnumerable<ClienteResponse> filtrados =
+                    clientesCarregados;
+
+                if (!string.IsNullOrWhiteSpace(busca))
                 {
-                    PreencherTabelaClientes(
-                        dgvClientes,
-                        clientesCarregados
-                    );
-
-                    return;
+                    filtrados = filtrados.Where(c =>
+                        (c.Nome ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (c.CPF ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (c.Telefone ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (c.CNH ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (c.Cidade ?? string.Empty).ToLowerInvariant().Contains(busca) ||
+                        (c.Estado ?? string.Empty).ToLowerInvariant().Contains(busca));
                 }
 
-                List<ClienteResponse> filtrados =
-                    clientesCarregados
-                        .Where(
-                            c =>
-                                (c.Nome ?? string.Empty)
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                                ||
-                                (c.CPF ?? string.Empty)
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                                ||
-                                (c.Telefone ?? string.Empty)
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                                ||
-                                (c.CNH ?? string.Empty)
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                                ||
-                                (c.Cidade ?? string.Empty)
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                                ||
-                                (c.Estado ?? string.Empty)
-                                    .ToLowerInvariant()
-                                    .Contains(busca)
-                        )
-                        .ToList();
+                if (cmbStatus.SelectedIndex == 1)
+                    filtrados = filtrados.Where(c => c.IsAtivo);
+                else if (cmbStatus.SelectedIndex == 2)
+                    filtrados = filtrados.Where(c => !c.IsAtivo);
 
                 PreencherTabelaClientes(
                     dgvClientes,
-                    filtrados
-                );
+                    filtrados.ToList());
             }
 
             async Task CarregarClientesAsync()
@@ -2681,8 +3091,7 @@ namespace GoCar.Desktop.Forms
                             "api/Clientes");
 
                     clientesCarregados =
-                        clientes ??
-                        new List<ClienteResponse>();
+                        clientes ?? new List<ClienteResponse>();
 
                     AplicarFiltro();
                 }
@@ -2697,32 +3106,160 @@ namespace GoCar.Desktop.Forms
                 }
             }
 
-            btnNovoCliente.Click +=
-                async (s, e) =>
+            btnNovoCliente.Click += async (s, e) =>
+            {
+                using (NovoClienteForm form = new NovoClienteForm())
                 {
-                    using (
-                        NovoClienteForm form =
-                            new NovoClienteForm()
-                    )
+                    DialogResult resultado = form.ShowDialog(this);
+
+                    if (resultado == DialogResult.OK &&
+                        form.ClienteCadastrado)
+                    {
+                        await CarregarClientesAsync();
+                    }
+                }
+            };
+
+            dgvClientes.CellContentClick += async (s, e) =>
+            {
+                if (e.RowIndex < 0 || e.ColumnIndex < 0)
+                    return;
+
+                if (dgvClientes.Rows[e.RowIndex].Tag
+                    is not ClienteResponse cliente)
+                    return;
+
+                string coluna =
+                    dgvClientes.Columns[e.ColumnIndex].Name;
+
+                if (coluna == "Editar")
+                {
+                    using (NovoClienteForm form =
+                        new NovoClienteForm(cliente.Id))
                     {
                         DialogResult resultado =
                             form.ShowDialog(this);
 
-                        if (
-                            resultado == DialogResult.OK &&
-                            form.ClienteCadastrado
-                        )
+                        if (resultado == DialogResult.OK &&
+                            form.ClienteCadastrado)
                         {
                             await CarregarClientesAsync();
                         }
                     }
-                };
 
-            txtBusca.TextChanged +=
-                (s, e) =>
+                    return;
+                }
+
+                if (coluna != "AcaoStatus")
+                    return;
+
+                if (cliente.IsAtivo)
                 {
-                    AplicarFiltro();
-                };
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja realmente desativar o cliente {cliente.Nome}?",
+                        "GoCar",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        HttpResponseMessage response =
+                            await ApiClient.DeleteAsync(
+                                $"api/Clientes/{cliente.Id}");
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível desativar o cliente.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Cliente desativado com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarClientesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao desativar cliente.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja reativar o cliente {cliente.Nome}?",
+                        "GoCar",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        HttpResponseMessage response =
+                            await ApiClient.PutAsync(
+                                $"api/Clientes/{cliente.Id}/ativar",
+                                new { });
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível reativar o cliente.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Cliente reativado com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarClientesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao reativar cliente.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
+            };
+
+            txtBusca.TextChanged += (s, e) => AplicarFiltro();
+            cmbStatus.SelectedIndexChanged += (s, e) => AplicarFiltro();
 
             await CarregarClientesAsync();
         }
@@ -2739,20 +3276,26 @@ namespace GoCar.Desktop.Forms
 
             foreach (ClienteResponse cliente in clientes)
             {
-                string status = cliente.IsAtivo ? "Ativo" : "Inativo";
+                string status =
+                    cliente.IsAtivo ? "Ativo" : "Inativo";
 
-                string cidade = string.IsNullOrWhiteSpace(cliente.Estado)
-                    ? cliente.Cidade
-                    : $"{cliente.Cidade} - {cliente.Estado}";
+                string cidade =
+                    string.IsNullOrWhiteSpace(cliente.Estado)
+                        ? cliente.Cidade
+                        : $"{cliente.Cidade} - {cliente.Estado}";
 
-                tabela.Rows.Add(
+                int indice = tabela.Rows.Add(
                     cliente.Nome,
                     FormatarCpf(cliente.CPF),
                     FormatarTelefone(cliente.Telefone),
                     cliente.CNH,
                     cliente.CategoriaCNH,
                     cidade,
-                    status);
+                    status,
+                    "Editar",
+                    cliente.IsAtivo ? "Desativar" : "Reativar");
+
+                tabela.Rows[indice].Tag = cliente;
             }
         }
 
@@ -2796,467 +3339,255 @@ namespace GoCar.Desktop.Forms
         // CADASTRO DE CATEGORIA
         // =====================================================
 
-        private async Task<bool> AbrirCadastroCategoria()
+        private async Task<bool> AbrirCadastroCategoria(
+            CategoriaResponse? categoriaEdicao = null)
         {
-            using Form form =
-                new Form
+            bool modoEdicao = categoriaEdicao != null;
+
+            using Form form = new Form
+            {
+                Text = modoEdicao
+                    ? "GoCar - Editar Categoria"
+                    : "GoCar - Nova Categoria",
+                StartPosition = FormStartPosition.CenterParent,
+                ClientSize = new Size(600, 500),
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                BackColor = Color.FromArgb(8, 0, 20),
+                ForeColor = Color.White
+            };
+
+            Label lblTitulo = new Label
+            {
+                Text = modoEdicao
+                    ? "Editar Categoria"
+                    : "Nova Categoria",
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 22, FontStyle.Bold),
+                AutoSize = true,
+                Location = new Point(40, 30)
+            };
+
+            Label lblSubtitulo = new Label
+            {
+                Text = modoEdicao
+                    ? "Atualize os dados da categoria de veículo."
+                    : "Cadastre uma nova categoria de veículo.",
+                ForeColor = Color.Gray,
+                Font = new Font("Segoe UI", 9),
+                AutoSize = true,
+                Location = new Point(42, 75)
+            };
+
+            Label lblNome = CriarLabelCampo("Nome", 40, 120);
+            TextBox txtNome = CriarCampoCategoria(40, 145, 500);
+
+            Label lblDescricao = CriarLabelCampo("Descrição", 40, 200);
+            TextBox txtDescricao = CriarCampoCategoria(40, 225, 500);
+
+            Label lblDiaria = CriarLabelCampo("Diária Base", 40, 280);
+            TextBox txtDiaria = CriarCampoCategoria(40, 305, 235);
+
+            Label lblKm = CriarLabelCampo("Km Livre", 305, 280);
+            TextBox txtKm = CriarCampoCategoria(305, 305, 235);
+
+            if (modoEdicao && categoriaEdicao != null)
+            {
+                txtNome.Text = categoriaEdicao.Nome;
+                txtDescricao.Text = categoriaEdicao.Descricao;
+                txtDiaria.Text = categoriaEdicao.DiariaBase
+                    .ToString("0.00", new CultureInfo("pt-BR"));
+                txtKm.Text = categoriaEdicao.KmLivre
+                    .ToString("0.##", new CultureInfo("pt-BR"));
+            }
+
+            Button btnCancelar = new Button
+            {
+                Text = "Cancelar",
+                Location = new Point(240, 390),
+                Size = new Size(140, 45),
+                BackColor = Color.FromArgb(18, 8, 30),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+
+            Button btnSalvar = new Button
+            {
+                Text = modoEdicao
+                    ? "Salvar Alterações"
+                    : "Salvar Categoria",
+                Location = new Point(400, 390),
+                Size = new Size(140, 45),
+                BackColor = Color.FromArgb(111, 38, 201),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold)
+            };
+
+            btnSalvar.FlatAppearance.BorderSize = 0;
+
+            form.Controls.Add(lblTitulo);
+            form.Controls.Add(lblSubtitulo);
+            form.Controls.Add(lblNome);
+            form.Controls.Add(txtNome);
+            form.Controls.Add(lblDescricao);
+            form.Controls.Add(txtDescricao);
+            form.Controls.Add(lblDiaria);
+            form.Controls.Add(txtDiaria);
+            form.Controls.Add(lblKm);
+            form.Controls.Add(txtKm);
+            form.Controls.Add(btnCancelar);
+            form.Controls.Add(btnSalvar);
+
+            bool salvo = false;
+
+            btnCancelar.Click += (s, e) =>
+            {
+                form.DialogResult = DialogResult.Cancel;
+                form.Close();
+            };
+
+            btnSalvar.Click += async (s, e) =>
+            {
+                if (string.IsNullOrWhiteSpace(txtNome.Text))
                 {
-                    Text =
-                        "GoCar - Nova Categoria",
+                    MessageBox.Show(
+                        "Informe o nome da categoria.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
 
-                    StartPosition =
-                        FormStartPosition.CenterParent,
+                    txtNome.Focus();
+                    return;
+                }
 
-                    ClientSize =
-                        new Size(
-                            600,
-                            500
-                        ),
-
-                    FormBorderStyle =
-                        FormBorderStyle.FixedDialog,
-
-                    MaximizeBox =
-                        false,
-
-                    MinimizeBox =
-                        false,
-
-                    BackColor =
-                        Color.FromArgb(
-                            8,
-                            0,
-                            20
-                        ),
-
-                    ForeColor =
-                        Color.White
-                };
-
-            Label lblTitulo =
-                new Label
+                if (!TentarConverterDecimal(
+                    txtDiaria.Text,
+                    out decimal diariaBase))
                 {
-                    Text =
-                        "Nova Categoria",
+                    MessageBox.Show(
+                        "Informe uma diária base válida.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
 
-                    ForeColor =
-                        Color.White,
+                    txtDiaria.Focus();
+                    return;
+                }
 
-                    Font =
-                        new Font(
-                            "Segoe UI",
-                            22,
-                            FontStyle.Bold
-                        ),
-
-                    AutoSize =
-                        true,
-
-                    Location =
-                        new Point(
-                            40,
-                            30
-                        )
-                };
-
-            Label lblSubtitulo =
-                new Label
+                if (!TentarConverterDecimal(
+                    txtKm.Text,
+                    out decimal kmLivre))
                 {
-                    Text =
-                        "Cadastre uma nova categoria de veículo.",
+                    MessageBox.Show(
+                        "Informe um Km Livre válido.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
 
-                    ForeColor =
-                        Color.Gray,
+                    txtKm.Focus();
+                    return;
+                }
 
-                    Font =
-                        new Font(
-                            "Segoe UI",
-                            9
-                        ),
-
-                    AutoSize =
-                        true,
-
-                    Location =
-                        new Point(
-                            42,
-                            75
-                        )
-                };
-
-            Label lblNome =
-                CriarLabelCampo(
-                    "Nome",
-                    40,
-                    120
-                );
-
-            TextBox txtNome =
-                CriarCampoCategoria(
-                    40,
-                    145,
-                    500
-                );
-
-            Label lblDescricao =
-                CriarLabelCampo(
-                    "Descrição",
-                    40,
-                    200
-                );
-
-            TextBox txtDescricao =
-                CriarCampoCategoria(
-                    40,
-                    225,
-                    500
-                );
-
-            Label lblDiaria =
-                CriarLabelCampo(
-                    "Diária Base",
-                    40,
-                    280
-                );
-
-            TextBox txtDiaria =
-                CriarCampoCategoria(
-                    40,
-                    305,
-                    235
-                );
-
-            Label lblKm =
-                CriarLabelCampo(
-                    "Km Livre",
-                    305,
-                    280
-                );
-
-            TextBox txtKm =
-                CriarCampoCategoria(
-                    305,
-                    305,
-                    235
-                );
-
-            Button btnCancelar =
-                new Button
+                try
                 {
-                    Text =
-                        "Cancelar",
+                    ConfigurarToken();
 
-                    Location =
-                        new Point(
-                            240,
-                            390
-                        ),
+                    btnSalvar.Enabled = false;
+                    btnSalvar.Text = "Salvando...";
 
-                    Size =
-                        new Size(
-                            140,
-                            45
-                        ),
+                    HttpResponseMessage response;
 
-                    BackColor =
-                        Color.FromArgb(
-                            18,
-                            8,
-                            30
-                        ),
-
-                    ForeColor =
-                        Color.White,
-
-                    FlatStyle =
-                        FlatStyle.Flat,
-
-                    Cursor =
-                        Cursors.Hand
-                };
-
-            Button btnSalvar =
-                new Button
-                {
-                    Text =
-                        "Salvar Categoria",
-
-                    Location =
-                        new Point(
-                            400,
-                            390
-                        ),
-
-                    Size =
-                        new Size(
-                            140,
-                            45
-                        ),
-
-                    BackColor =
-                        Color.FromArgb(
-                            111,
-                            38,
-                            201
-                        ),
-
-                    ForeColor =
-                        Color.White,
-
-                    FlatStyle =
-                        FlatStyle.Flat,
-
-                    Cursor =
-                        Cursors.Hand,
-
-                    Font =
-                        new Font(
-                            "Segoe UI",
-                            9,
-                            FontStyle.Bold
-                        )
-                };
-
-            btnSalvar
-                .FlatAppearance
-                .BorderSize = 0;
-
-            form.Controls.Add(
-                lblTitulo
-            );
-
-            form.Controls.Add(
-                lblSubtitulo
-            );
-
-            form.Controls.Add(
-                lblNome
-            );
-
-            form.Controls.Add(
-                txtNome
-            );
-
-            form.Controls.Add(
-                lblDescricao
-            );
-
-            form.Controls.Add(
-                txtDescricao
-            );
-
-            form.Controls.Add(
-                lblDiaria
-            );
-
-            form.Controls.Add(
-                txtDiaria
-            );
-
-            form.Controls.Add(
-                lblKm
-            );
-
-            form.Controls.Add(
-                txtKm
-            );
-
-            form.Controls.Add(
-                btnCancelar
-            );
-
-            form.Controls.Add(
-                btnSalvar
-            );
-
-            bool cadastrado =
-                false;
-
-            btnCancelar.Click +=
-                (s, e) =>
-                {
-                    form.DialogResult =
-                        DialogResult.Cancel;
-
-                    form.Close();
-                };
-
-            btnSalvar.Click +=
-                async (s, e) =>
-                {
-                    if (
-                        string.IsNullOrWhiteSpace(
-                            txtNome.Text
-                        )
-                    )
+                    if (modoEdicao && categoriaEdicao != null)
                     {
-                        MessageBox.Show(
-                            "Informe o nome da categoria.",
-
-                            "GoCar",
-
-                            MessageBoxButtons.OK,
-
-                            MessageBoxIcon.Warning
-                        );
-
-                        txtNome.Focus();
-
-                        return;
-                    }
-
-                    if (
-                        !TentarConverterDecimal(
-                            txtDiaria.Text,
-                            out decimal diariaBase
-                        )
-                    )
-                    {
-                        MessageBox.Show(
-                            "Informe uma diária base válida.",
-
-                            "GoCar",
-
-                            MessageBoxButtons.OK,
-
-                            MessageBoxIcon.Warning
-                        );
-
-                        txtDiaria.Focus();
-
-                        return;
-                    }
-
-                    if (
-                        !TentarConverterDecimal(
-                            txtKm.Text,
-                            out decimal kmLivre
-                        )
-                    )
-                    {
-                        MessageBox.Show(
-                            "Informe um Km Livre válido.",
-
-                            "GoCar",
-
-                            MessageBoxButtons.OK,
-
-                            MessageBoxIcon.Warning
-                        );
-
-                        txtKm.Focus();
-
-                        return;
-                    }
-
-                    try
-                    {
-                        ConfigurarToken();
-
-                        btnSalvar.Enabled =
-                            false;
-
-                        btnSalvar.Text =
-                            "Salvando...";
-
-                        var novaCategoria =
-                            new
-                            {
-                                nome =
-                                    txtNome.Text.Trim(),
-
-                                descricao =
-                                    txtDescricao.Text.Trim(),
-
-                                diariaBase =
-                                    diariaBase,
-
-                                kmLivre =
-                                    kmLivre
-                            };
-
-                        HttpResponseMessage response =
-                            await ApiClient
-                                .PostAsync(
-                                    "api/Categorias",
-                                    novaCategoria
-                                );
-
-                        if (
-                            response.IsSuccessStatusCode
-                        )
+                        var categoriaAtualizada = new
                         {
-                            cadastrado =
-                                true;
+                            nome = txtNome.Text.Trim(),
+                            descricao = txtDescricao.Text.Trim(),
+                            diariaBase,
+                            kmLivre,
+                            isAtivo = categoriaEdicao.IsAtivo
+                        };
 
-                            MessageBox.Show(
-                                "Categoria cadastrada com sucesso!",
-
-                                "GoCar",
-
-                                MessageBoxButtons.OK,
-
-                                MessageBoxIcon.Information
-                            );
-
-                            form.DialogResult =
-                                DialogResult.OK;
-
-                            form.Close();
-
-                            return;
-                        }
-
-                        string erro =
-                            await response
-                                .Content
-                                .ReadAsStringAsync();
-
-                        MessageBox.Show(
-                            "Não foi possível cadastrar " +
-                            "a categoria.\n\n" +
-                            $"Código: " +
-                            $"{(int)response.StatusCode}\n\n" +
-                            erro,
-
-                            "GoCar",
-
-                            MessageBoxButtons.OK,
-
-                            MessageBoxIcon.Error
-                        );
+                        response = await ApiClient.PutAsync(
+                            $"api/Categorias/{categoriaEdicao.Id}",
+                            categoriaAtualizada);
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        MessageBox.Show(
-                            "Erro ao cadastrar categoria.\n\n" +
-                            ex.Message,
-
-                            "GoCar",
-
-                            MessageBoxButtons.OK,
-
-                            MessageBoxIcon.Error
-                        );
-                    }
-                    finally
-                    {
-                        if (!form.IsDisposed)
+                        var novaCategoria = new
                         {
-                            btnSalvar.Enabled =
-                                true;
+                            nome = txtNome.Text.Trim(),
+                            descricao = txtDescricao.Text.Trim(),
+                            diariaBase,
+                            kmLivre
+                        };
 
-                            btnSalvar.Text =
-                                "Salvar Categoria";
-                        }
+                        response = await ApiClient.PostAsync(
+                            "api/Categorias",
+                            novaCategoria);
                     }
-                };
 
-            form.ShowDialog(
-                this
-            );
+                    if (response.IsSuccessStatusCode)
+                    {
+                        salvo = true;
 
-            return cadastrado;
+                        MessageBox.Show(
+                            modoEdicao
+                                ? "Categoria atualizada com sucesso!"
+                                : "Categoria cadastrada com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        form.DialogResult = DialogResult.OK;
+                        form.Close();
+                        return;
+                    }
+
+                    string erro =
+                        await response.Content.ReadAsStringAsync();
+
+                    MessageBox.Show(
+                        (modoEdicao
+                            ? "Não foi possível atualizar a categoria."
+                            : "Não foi possível cadastrar a categoria.") +
+                        "\n\nCódigo: " +
+                        $"{(int)response.StatusCode}\n\n" +
+                        erro,
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        (modoEdicao
+                            ? "Erro ao atualizar categoria."
+                            : "Erro ao cadastrar categoria.") +
+                        "\n\n" + ex.Message,
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    if (!form.IsDisposed)
+                    {
+                        btnSalvar.Enabled = true;
+                        btnSalvar.Text = modoEdicao
+                            ? "Salvar Alterações"
+                            : "Salvar Categoria";
+                    }
+                }
+            };
+
+            form.ShowDialog(this);
+
+            return salvo;
         }
 
         // =====================================================
@@ -5014,7 +5345,6 @@ namespace GoCar.Desktop.Forms
             MessageBox.Show(
                 $"Módulo {modulo} preparado " +
                 "para implementação.",
-
                 "GoCar",
 
                 MessageBoxButtons.OK,

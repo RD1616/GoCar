@@ -9,25 +9,41 @@ namespace GoCar.Infrastructure.Repositories
     {
         private readonly GoCarDbContext _context;
 
-        public VeiculoRepository(GoCarDbContext context)
+        public VeiculoRepository(
+            GoCarDbContext context)
         {
             _context = context;
         }
 
-        public async Task<IEnumerable<Veiculo>> ListarTodosAsync()
+        // =====================================================
+        // LISTAR TODOS
+        // =====================================================
+
+        public async Task<IEnumerable<Veiculo>>
+            ListarTodosAsync()
         {
             return await _context.Veiculos
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task<Veiculo?> ObterPorIdAsync(int id)
+        // =====================================================
+        // OBTER POR ID
+        // =====================================================
+
+        public async Task<Veiculo?> ObterPorIdAsync(
+            int id)
         {
             return await _context.Veiculos
                 .FirstOrDefaultAsync(v => v.Id == id);
         }
 
-        public async Task<Veiculo> CriarAsync(Veiculo veiculo)
+        // =====================================================
+        // CRIAR
+        // =====================================================
+
+        public async Task<Veiculo> CriarAsync(
+            Veiculo veiculo)
         {
             _context.Veiculos.Add(veiculo);
 
@@ -36,36 +52,33 @@ namespace GoCar.Infrastructure.Repositories
             return veiculo;
         }
 
-        public async Task<bool> AtualizarAsync(Veiculo veiculo)
-        {
-            var veiculoExistente = await _context.Veiculos
-                .FirstOrDefaultAsync(v => v.Id == veiculo.Id);
+        // =====================================================
+        // ATUALIZAR
+        // =====================================================
 
-            if (veiculoExistente == null)
+        public async Task<bool> AtualizarAsync(
+            Veiculo veiculo)
+        {
+            var existe = await _context.Veiculos
+                .AnyAsync(v => v.Id == veiculo.Id);
+
+            if (!existe)
                 return false;
 
-            veiculoExistente.Placa = veiculo.Placa;
-            veiculoExistente.Chassi = veiculo.Chassi;
-            veiculoExistente.Renavam = veiculo.Renavam;
-            veiculoExistente.Modelo = veiculo.Modelo;
-            veiculoExistente.Marca = veiculo.Marca;
-            veiculoExistente.AnoFabricacao = veiculo.AnoFabricacao;
-            veiculoExistente.AnoModelo = veiculo.AnoModelo;
-            veiculoExistente.Cor = veiculo.Cor;
-            veiculoExistente.Combustivel = veiculo.Combustivel;
-            veiculoExistente.Cambio = veiculo.Cambio;
-            veiculoExistente.Status = veiculo.Status;
-            veiculoExistente.KmAtual = veiculo.KmAtual;
-            veiculoExistente.ValorDiaria = veiculo.ValorDiaria;
-            veiculoExistente.CategoriaId = veiculo.CategoriaId;
-            veiculoExistente.FilialId = veiculo.FilialId;
-
+            // A entidade já foi obtida e alterada pelo Service.
+            // Como está sendo rastreada pelo mesmo DbContext,
+            // basta persistir as alterações.
             await _context.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<bool> ExcluirAsync(int id)
+        // =====================================================
+        // DESATIVAR
+        // =====================================================
+
+        public async Task<bool> ExcluirAsync(
+            int id)
         {
             var veiculo = await _context.Veiculos
                 .FirstOrDefaultAsync(v => v.Id == id);
@@ -74,6 +87,26 @@ namespace GoCar.Infrastructure.Repositories
                 return false;
 
             veiculo.IsAtivo = false;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool>
+            ExcluirPermanentementeAsync(int id)
+        {
+            var veiculo = await _context.Veiculos
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            if (veiculo == null)
+                return false;
+
+            _context.Veiculos.Remove(veiculo);
 
             await _context.SaveChangesAsync();
 

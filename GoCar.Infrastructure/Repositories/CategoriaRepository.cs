@@ -14,6 +14,10 @@ namespace GoCar.Infrastructure.Repositories
             _context = context;
         }
 
+        // =====================================================
+        // LISTAR TODOS
+        // =====================================================
+
         public async Task<IEnumerable<Categoria>> ListarTodosAsync()
         {
             return await _context.Categorias
@@ -21,13 +25,22 @@ namespace GoCar.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        // =====================================================
+        // OBTER POR ID
+        // =====================================================
+
         public async Task<Categoria?> ObterPorIdAsync(int id)
         {
             return await _context.Categorias
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public async Task<Categoria> CriarAsync(Categoria categoria)
+        // =====================================================
+        // CRIAR
+        // =====================================================
+
+        public async Task<Categoria> CriarAsync(
+            Categoria categoria)
         {
             _context.Categorias.Add(categoria);
 
@@ -36,24 +49,29 @@ namespace GoCar.Infrastructure.Repositories
             return categoria;
         }
 
-        public async Task<bool> AtualizarAsync(Categoria categoria)
-        {
-            var categoriaExistente = await _context.Categorias
-                .FirstOrDefaultAsync(c => c.Id == categoria.Id);
+        // =====================================================
+        // ATUALIZAR
+        // =====================================================
 
-            if (categoriaExistente == null)
+        public async Task<bool> AtualizarAsync(
+            Categoria categoria)
+        {
+            var existe = await _context.Categorias
+                .AnyAsync(c => c.Id == categoria.Id);
+
+            if (!existe)
                 return false;
 
-            categoriaExistente.Nome = categoria.Nome;
-            categoriaExistente.Descricao = categoria.Descricao;
-            categoriaExistente.DiariaBase = categoria.DiariaBase;
-            categoriaExistente.KmLivre = categoria.KmLivre;
-            categoriaExistente.IsAtivo = categoria.IsAtivo;
-
+            // A entidade já está sendo rastreada pelo DbContext
+            // porque foi obtida anteriormente por ObterPorIdAsync.
             await _context.SaveChangesAsync();
 
             return true;
         }
+
+        // =====================================================
+        // DESATIVAR
+        // =====================================================
 
         public async Task<bool> ExcluirAsync(int id)
         {
@@ -64,6 +82,45 @@ namespace GoCar.Infrastructure.Repositories
                 return false;
 
             categoria.IsAtivo = false;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        // =====================================================
+        // REATIVAR
+        // =====================================================
+
+        public async Task<bool> AtivarAsync(int id)
+        {
+            var categoria = await _context.Categorias
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (categoria == null)
+                return false;
+
+            categoria.IsAtivo = true;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool> ExcluirPermanentementeAsync(
+            int id)
+        {
+            var categoria = await _context.Categorias
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (categoria == null)
+                return false;
+
+            _context.Categorias.Remove(categoria);
 
             await _context.SaveChangesAsync();
 

@@ -8,11 +8,14 @@ namespace GoCar.Application.Services
     public class VeiculoService : IVeiculoService
     {
         private readonly IVeiculoRepository _repository;
+        private readonly IReservaRepository _reservaRepository;
 
         public VeiculoService(
-            IVeiculoRepository repository)
+            IVeiculoRepository repository,
+            IReservaRepository reservaRepository)
         {
             _repository = repository;
+            _reservaRepository = reservaRepository;
         }
 
         // =====================================================
@@ -52,64 +55,30 @@ namespace GoCar.Application.Services
         public async Task<VeiculoDto> CriarAsync(
             CriarVeiculoDto dto)
         {
-            var veiculo =
-                new Veiculo
-                {
-                    Placa =
-                        dto.Placa,
-
-                    Chassi =
-                        dto.Chassi,
-
-                    Renavam =
-                        dto.Renavam,
-
-                    Modelo =
-                        dto.Modelo,
-
-                    Marca =
-                        dto.Marca,
-
-                    AnoFabricacao =
-                        dto.AnoFabricacao,
-
-                    AnoModelo =
-                        dto.AnoModelo,
-
-                    Cor =
-                        dto.Cor,
-
-                    Combustivel =
-                        dto.Combustivel,
-
-                    Cambio =
-                        dto.Cambio,
-
-                    Status =
-                        dto.Status,
-
-                    KmAtual =
-                        dto.KmAtual,
-
-                    ValorDiaria =
-                        dto.ValorDiaria,
-
-                    CategoriaId =
-                        dto.CategoriaId,
-
-                    FilialId =
-                        dto.FilialId,
-
-                    IsAtivo =
-                        true
-                };
+            var veiculo = new Veiculo
+            {
+                Placa = dto.Placa,
+                Chassi = dto.Chassi,
+                Renavam = dto.Renavam,
+                Modelo = dto.Modelo,
+                Marca = dto.Marca,
+                AnoFabricacao = dto.AnoFabricacao,
+                AnoModelo = dto.AnoModelo,
+                Cor = dto.Cor,
+                Combustivel = dto.Combustivel,
+                Cambio = dto.Cambio,
+                Status = dto.Status,
+                KmAtual = dto.KmAtual,
+                ValorDiaria = dto.ValorDiaria,
+                CategoriaId = dto.CategoriaId,
+                FilialId = dto.FilialId,
+                IsAtivo = true
+            };
 
             var veiculoCriado =
-                await _repository
-                    .CriarAsync(veiculo);
+                await _repository.CriarAsync(veiculo);
 
-            return MapearParaDto(
-                veiculoCriado);
+            return MapearParaDto(veiculoCriado);
         }
 
         // =====================================================
@@ -121,56 +90,26 @@ namespace GoCar.Application.Services
             AtualizarVeiculoDto dto)
         {
             var veiculo =
-                await _repository
-                    .ObterPorIdAsync(id);
+                await _repository.ObterPorIdAsync(id);
 
             if (veiculo == null)
                 return false;
 
-            veiculo.Placa =
-                dto.Placa;
-
-            veiculo.Chassi =
-                dto.Chassi;
-
-            veiculo.Renavam =
-                dto.Renavam;
-
-            veiculo.Modelo =
-                dto.Modelo;
-
-            veiculo.Marca =
-                dto.Marca;
-
-            veiculo.AnoFabricacao =
-                dto.AnoFabricacao;
-
-            veiculo.AnoModelo =
-                dto.AnoModelo;
-
-            veiculo.Cor =
-                dto.Cor;
-
-            veiculo.Combustivel =
-                dto.Combustivel;
-
-            veiculo.Cambio =
-                dto.Cambio;
-
-            veiculo.Status =
-                dto.Status;
-
-            veiculo.KmAtual =
-                dto.KmAtual;
-
-            veiculo.ValorDiaria =
-                dto.ValorDiaria;
-
-            veiculo.CategoriaId =
-                dto.CategoriaId;
-
-            veiculo.FilialId =
-                dto.FilialId;
+            veiculo.Placa = dto.Placa;
+            veiculo.Chassi = dto.Chassi;
+            veiculo.Renavam = dto.Renavam;
+            veiculo.Modelo = dto.Modelo;
+            veiculo.Marca = dto.Marca;
+            veiculo.AnoFabricacao = dto.AnoFabricacao;
+            veiculo.AnoModelo = dto.AnoModelo;
+            veiculo.Cor = dto.Cor;
+            veiculo.Combustivel = dto.Combustivel;
+            veiculo.Cambio = dto.Cambio;
+            veiculo.Status = dto.Status;
+            veiculo.KmAtual = dto.KmAtual;
+            veiculo.ValorDiaria = dto.ValorDiaria;
+            veiculo.CategoriaId = dto.CategoriaId;
+            veiculo.FilialId = dto.FilialId;
 
             return await _repository
                 .AtualizarAsync(veiculo);
@@ -184,15 +123,10 @@ namespace GoCar.Application.Services
             int id)
         {
             var veiculo =
-                await _repository
-                    .ObterPorIdAsync(id);
+                await _repository.ObterPorIdAsync(id);
 
             if (veiculo == null)
                 return false;
-
-            // =================================================
-            // NÃO PERMITIR DESATIVAR VEÍCULO RESERVADO
-            // =================================================
 
             if (veiculo.Status ==
                 StatusVeiculo.Reservado)
@@ -202,10 +136,6 @@ namespace GoCar.Application.Services
                     "que possui uma reserva ativa.");
             }
 
-            // =================================================
-            // NÃO PERMITIR DESATIVAR VEÍCULO ALUGADO
-            // =================================================
-
             if (veiculo.Status ==
                 StatusVeiculo.Alugado)
             {
@@ -213,10 +143,6 @@ namespace GoCar.Application.Services
                     "Não é possível desativar um veículo " +
                     "que está em uma locação ativa.");
             }
-
-            // =================================================
-            // DESATIVAR
-            // =================================================
 
             return await _repository
                 .ExcluirAsync(id);
@@ -230,14 +156,12 @@ namespace GoCar.Application.Services
             int id)
         {
             var veiculo =
-                await _repository
-                    .ObterPorIdAsync(id);
+                await _repository.ObterPorIdAsync(id);
 
             if (veiculo == null)
                 return false;
 
-            veiculo.IsAtivo =
-                true;
+            veiculo.IsAtivo = true;
 
             if (veiculo.Status ==
                 StatusVeiculo.Inativo)
@@ -251,6 +175,39 @@ namespace GoCar.Application.Services
         }
 
         // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool>
+            ExcluirPermanentementeAsync(int id)
+        {
+            var veiculo =
+                await _repository.ObterPorIdAsync(id);
+
+            if (veiculo == null)
+                return false;
+
+            var reservas =
+                await _reservaRepository
+                    .ListarTodosAsync();
+
+            bool possuiReserva =
+                reservas.Any(r =>
+                    r.VeiculoId == id);
+
+            if (possuiReserva)
+            {
+                throw new Exception(
+                    "Não é possível excluir permanentemente " +
+                    "este veículo porque ele possui reservas " +
+                    "ou histórico de locação vinculado.");
+            }
+
+            return await _repository
+                .ExcluirPermanentementeAsync(id);
+        }
+
+        // =====================================================
         // MAPEAR PARA DTO
         // =====================================================
 
@@ -259,56 +216,23 @@ namespace GoCar.Application.Services
         {
             return new VeiculoDto
             {
-                Id =
-                    veiculo.Id,
-
-                Placa =
-                    veiculo.Placa,
-
-                Chassi =
-                    veiculo.Chassi,
-
-                Renavam =
-                    veiculo.Renavam,
-
-                Modelo =
-                    veiculo.Modelo,
-
-                Marca =
-                    veiculo.Marca,
-
-                AnoFabricacao =
-                    veiculo.AnoFabricacao,
-
-                AnoModelo =
-                    veiculo.AnoModelo,
-
-                Cor =
-                    veiculo.Cor,
-
-                Combustivel =
-                    veiculo.Combustivel,
-
-                Cambio =
-                    veiculo.Cambio,
-
-                Status =
-                    veiculo.Status,
-
-                KmAtual =
-                    veiculo.KmAtual,
-
-                ValorDiaria =
-                    veiculo.ValorDiaria,
-
-                IsAtivo =
-                    veiculo.IsAtivo,
-
-                CategoriaId =
-                    veiculo.CategoriaId,
-
-                FilialId =
-                    veiculo.FilialId
+                Id = veiculo.Id,
+                Placa = veiculo.Placa,
+                Chassi = veiculo.Chassi,
+                Renavam = veiculo.Renavam,
+                Modelo = veiculo.Modelo,
+                Marca = veiculo.Marca,
+                AnoFabricacao = veiculo.AnoFabricacao,
+                AnoModelo = veiculo.AnoModelo,
+                Cor = veiculo.Cor,
+                Combustivel = veiculo.Combustivel,
+                Cambio = veiculo.Cambio,
+                Status = veiculo.Status,
+                KmAtual = veiculo.KmAtual,
+                ValorDiaria = veiculo.ValorDiaria,
+                IsAtivo = veiculo.IsAtivo,
+                CategoriaId = veiculo.CategoriaId,
+                FilialId = veiculo.FilialId
             };
         }
     }
