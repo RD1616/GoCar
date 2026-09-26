@@ -21,6 +21,9 @@ namespace GoCar.Application.Interfaces
         Task<bool> ExcluirAsync(
             int id);
 
+        Task<bool> ExcluirPermanentementeAsync(
+            int id);
+
         Task<bool> ExisteConflitoAsync(
             int veiculoId,
             DateTime dataRetirada,

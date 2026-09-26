@@ -1,4 +1,4 @@
-﻿using GoCar.Application.DTOs.Reserva;
+using GoCar.Application.DTOs.Reserva;
 using GoCar.Application.Interfaces;
 using GoCar.Domain.Entities;
 using GoCar.Domain.Enums;
@@ -10,15 +10,18 @@ namespace GoCar.Application.Services
         private readonly IReservaRepository _reservaRepository;
         private readonly IVeiculoRepository _veiculoRepository;
         private readonly IPagamentoRepository _pagamentoRepository;
+        private readonly ILocacaoRepository _locacaoRepository;
 
         public ReservaService(
             IReservaRepository reservaRepository,
             IVeiculoRepository veiculoRepository,
-            IPagamentoRepository pagamentoRepository)
+            IPagamentoRepository pagamentoRepository,
+            ILocacaoRepository locacaoRepository)
         {
             _reservaRepository = reservaRepository;
             _veiculoRepository = veiculoRepository;
             _pagamentoRepository = pagamentoRepository;
+            _locacaoRepository = locacaoRepository;
         }
 
         // =====================================================
@@ -676,6 +679,89 @@ namespace GoCar.Application.Services
         {
             return await _reservaRepository
                 .ExcluirAsync(id);
+        }
+
+        // =====================================================
+        // EXCLUIR PERMANENTEMENTE
+        // =====================================================
+
+        public async Task<bool> ExcluirPermanentementeAsync(
+            int id)
+        {
+            var reserva =
+                await _reservaRepository
+                    .ObterPorIdAsync(id);
+
+            if (reserva == null)
+                return false;
+
+            var locacao =
+                await _locacaoRepository
+                    .ObterPorReservaIdAsync(id);
+
+            if (locacao != null)
+            {
+                throw new InvalidOperationException(
+                    "Não é possível excluir permanentemente esta reserva " +
+                    "porque ela possui uma locação vinculada.");
+            }
+
+            var pagamentos =
+                (await _pagamentoRepository
+                    .ListarTodosAsync())
+                .Where(p => p.ReservaId == id)
+                .ToList();
+
+            var possuiPagamentoPago =
+                pagamentos.Any(p =>
+                    p.Status == StatusPagamento.Pago);
+
+            if (possuiPagamentoPago)
+            {
+                throw new InvalidOperationException(
+                    "Não é possível excluir permanentemente esta reserva " +
+                    "porque ela possui pagamento pago vinculado.");
+            }
+
+            // Pagamentos ainda não efetivados não devem impedir
+            // a exclusão da reserva. Eles são removidos antes para
+            // não deixar vínculo órfão no banco.
+            foreach (var pagamento in pagamentos)
+            {
+                var pagamentoExcluido =
+                    await _pagamentoRepository
+                        .ExcluirAsync(pagamento.Id);
+
+                if (!pagamentoExcluido)
+                {
+                    throw new InvalidOperationException(
+                        "Não foi possível remover o pagamento pendente " +
+                        "vinculado à reserva.");
+                }
+            }
+
+            var veiculoId =
+                reserva.VeiculoId;
+
+            var estavaConfirmada =
+                reserva.IsAtiva &&
+                reserva.Status == StatusReserva.Confirmada;
+
+            var excluida =
+                await _reservaRepository
+                    .ExcluirPermanentementeAsync(id);
+
+            if (!excluida)
+                return false;
+
+            if (estavaConfirmada)
+            {
+                await SincronizarStatusVeiculoReservasAsync(
+                    veiculoId,
+                    id);
+            }
+
+            return true;
         }
 
         // =====================================================

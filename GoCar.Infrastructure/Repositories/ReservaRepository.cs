@@ -175,6 +175,10 @@ namespace GoCar.Infrastructure.Repositories
                         StatusReserva.Confirmada);
         }
 
+        // =========================================
+        // EXCLUIR
+        // =========================================
+
         public async Task<bool> ExcluirAsync(
             int id)
         {
@@ -188,6 +192,28 @@ namespace GoCar.Infrastructure.Repositories
 
             reserva.IsAtiva =
                 false;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        // =========================================
+        // EXCLUIR PERMANENTEMENTE
+        // =========================================
+
+        public async Task<bool> ExcluirPermanentementeAsync(
+            int id)
+        {
+            var reserva =
+                await _context.Reservas
+                    .FirstOrDefaultAsync(
+                        r => r.Id == id);
+
+            if (reserva == null)
+                return false;
+
+            _context.Reservas.Remove(reserva);
 
             await _context.SaveChangesAsync();
 

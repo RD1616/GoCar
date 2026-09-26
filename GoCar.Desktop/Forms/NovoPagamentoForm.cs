@@ -46,6 +46,11 @@ namespace GoCar.Desktop.Forms
 
         public bool PagamentoCadastrado { get; private set; }
 
+        private readonly int? pagamentoId;
+        private readonly int? statusInicialEdicao;
+        private PagamentoResponse? pagamentoEdicao;
+        private bool carregandoEdicao;
+
         // =====================================================
         // DTO RESERVA
         // =====================================================
@@ -196,7 +201,22 @@ namespace GoCar.Desktop.Forms
         // =====================================================
 
         public NovoPagamentoForm()
+            : this(null, null)
         {
+        }
+
+        public NovoPagamentoForm(int? pagamentoId)
+            : this(pagamentoId, null)
+        {
+        }
+
+        public NovoPagamentoForm(
+            int? pagamentoId,
+            int? statusInicialEdicao)
+        {
+            this.pagamentoId = pagamentoId;
+            this.statusInicialEdicao = statusInicialEdicao;
+
             ConfigurarFormulario();
 
             CriarInterface();
@@ -214,7 +234,9 @@ namespace GoCar.Desktop.Forms
         private void ConfigurarFormulario()
         {
             Text =
-                "Novo Pagamento - GoCar";
+                pagamentoId.HasValue
+                    ? "Editar Pagamento - GoCar"
+                    : "Novo Pagamento - GoCar";
 
             StartPosition =
                 FormStartPosition.CenterParent;
@@ -253,7 +275,9 @@ namespace GoCar.Desktop.Forms
                 new Label
                 {
                     Text =
-                        "Registrar Pagamento",
+                        pagamentoId.HasValue
+                            ? "Editar Pagamento"
+                            : "Registrar Pagamento",
 
                     Font =
                         new Font(
@@ -276,7 +300,9 @@ namespace GoCar.Desktop.Forms
                 new Label
                 {
                     Text =
-                        "Registre entradas de reservas ou pagamentos de locações.",
+                        pagamentoId.HasValue
+                            ? "Atualize a forma, o status ou as observações do pagamento."
+                            : "Registre entradas de reservas ou pagamentos de locações.",
 
                     ForeColor =
                         Color.FromArgb(
@@ -476,6 +502,20 @@ namespace GoCar.Desktop.Forms
                     Texto = "Pago"
                 });
 
+            cmbStatus.Items.Add(
+                new ComboItem
+                {
+                    Valor = 3,
+                    Texto = "Cancelado"
+                });
+
+            cmbStatus.Items.Add(
+                new ComboItem
+                {
+                    Valor = 4,
+                    Texto = "Estornado"
+                });
+
             cmbStatus.SelectedIndex = 1;
 
             // =================================================
@@ -574,7 +614,9 @@ namespace GoCar.Desktop.Forms
                 new Button
                 {
                     Text =
-                        "Registrar Pagamento",
+                        pagamentoId.HasValue
+                            ? "Salvar Alterações"
+                            : "Registrar Pagamento",
 
                     Location =
                         new Point(
@@ -624,7 +666,7 @@ namespace GoCar.Desktop.Forms
             btnCadastrar.Click +=
                 async (s, e) =>
                 {
-                    await CadastrarPagamentoAsync();
+                    await SalvarPagamentoAsync();
                 };
 
             Controls.Add(btnCancelar);
@@ -680,9 +722,26 @@ namespace GoCar.Desktop.Forms
                     pagamentosResposta ??
                     new List<PagamentoResponse>();
 
-                cmbTipoPagamento.SelectedIndex = 0;
+                if (pagamentoId.HasValue)
+                {
+                    pagamentoEdicao =
+                        pagamentos.FirstOrDefault(
+                            p => p.Id == pagamentoId.Value);
 
-                await AtualizarTipoPagamentoAsync();
+                    if (pagamentoEdicao == null)
+                    {
+                        throw new Exception(
+                            $"Pagamento #{pagamentoId.Value} não encontrado.");
+                    }
+
+                    await CarregarPagamentoEdicaoAsync();
+                }
+                else
+                {
+                    cmbTipoPagamento.SelectedIndex = 0;
+
+                    await AtualizarTipoPagamentoAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -1022,6 +1081,454 @@ namespace GoCar.Desktop.Forms
 
             lblValorPagamento.Text =
                 "R$ 0,00";
+        }
+
+        // =====================================================
+        // CARREGAR PAGAMENTO PARA EDIÇÃO
+        // =====================================================
+
+        private async Task CarregarPagamentoEdicaoAsync()
+        {
+            if (pagamentoEdicao == null)
+                return;
+
+            carregandoEdicao = true;
+
+            try
+            {
+                bool entrada =
+                    pagamentoEdicao.ReservaId.HasValue;
+
+                cmbTipoPagamento.SelectedIndex =
+                    entrada ? 0 : 1;
+
+                await AtualizarTipoPagamentoAsync();
+
+                if (entrada)
+                {
+                    ReservaResponse? reserva =
+                        reservas.FirstOrDefault(
+                            r => r.Id ==
+                                pagamentoEdicao.ReservaId!.Value);
+
+                    if (reserva == null)
+                    {
+                        throw new Exception(
+                            "A reserva vinculada ao pagamento não foi encontrada.");
+                    }
+
+                    cmbVinculo.DataSource =
+                        new List<ReservaResponse>
+                        {
+                            reserva
+                        };
+
+                    cmbVinculo.SelectedIndex = 0;
+                }
+                else
+                {
+                    LocacaoResponse? locacao =
+                        locacoes.FirstOrDefault(
+                            l => l.Id ==
+                                pagamentoEdicao.LocacaoId!.Value);
+
+                    if (locacao == null)
+                    {
+                        throw new Exception(
+                            "A locação vinculada ao pagamento não foi encontrada.");
+                    }
+
+                    cmbVinculo.DataSource =
+                        new List<LocacaoResponse>
+                        {
+                            locacao
+                        };
+
+                    cmbVinculo.SelectedIndex = 0;
+                }
+
+                SelecionarComboPorValor(
+                    cmbFormaPagamento,
+                    pagamentoEdicao.FormaPagamento);
+
+                ConfigurarStatusEdicao(
+                    pagamentoEdicao.Status);
+
+                if (statusInicialEdicao.HasValue)
+                {
+                    bool transicaoValida =
+                        (pagamentoEdicao.Status == 1 &&
+                         statusInicialEdicao.Value == 3) ||
+                        (pagamentoEdicao.Status == 2 &&
+                         statusInicialEdicao.Value == 4);
+
+                    if (transicaoValida)
+                    {
+                        SelecionarComboPorValor(
+                            cmbStatus,
+                            statusInicialEdicao.Value);
+                    }
+                }
+
+                txtObservacoes.Text =
+                    pagamentoEdicao.Observacoes ??
+                    string.Empty;
+
+                cmbTipoPagamento.Enabled =
+                    false;
+
+                cmbVinculo.Enabled =
+                    false;
+
+                btnCadastrar.Enabled =
+                    true;
+
+                AtualizarDadosSelecionados();
+            }
+            finally
+            {
+                carregandoEdicao = false;
+            }
+        }
+
+        private void ConfigurarStatusEdicao(
+            int statusAtual)
+        {
+            cmbStatus.Items.Clear();
+
+            if (statusAtual == 1)
+            {
+                cmbStatus.Items.Add(
+                    new ComboItem
+                    {
+                        Valor = 1,
+                        Texto = "Pendente"
+                    });
+
+                cmbStatus.Items.Add(
+                    new ComboItem
+                    {
+                        Valor = 2,
+                        Texto = "Pago"
+                    });
+
+                cmbStatus.Items.Add(
+                    new ComboItem
+                    {
+                        Valor = 3,
+                        Texto = "Cancelado"
+                    });
+            }
+            else if (statusAtual == 2)
+            {
+                cmbStatus.Items.Add(
+                    new ComboItem
+                    {
+                        Valor = 2,
+                        Texto = "Pago"
+                    });
+
+                cmbStatus.Items.Add(
+                    new ComboItem
+                    {
+                        Valor = 4,
+                        Texto = "Estornado"
+                    });
+            }
+            else if (statusAtual == 3)
+            {
+                cmbStatus.Items.Add(
+                    new ComboItem
+                    {
+                        Valor = 3,
+                        Texto = "Cancelado"
+                    });
+            }
+            else
+            {
+                cmbStatus.Items.Add(
+                    new ComboItem
+                    {
+                        Valor = 4,
+                        Texto = "Estornado"
+                    });
+            }
+
+            SelecionarComboPorValor(
+                cmbStatus,
+                statusAtual);
+
+            bool historico =
+                statusAtual == 3 ||
+                statusAtual == 4;
+
+            cmbFormaPagamento.Enabled =
+                !historico;
+
+            cmbStatus.Enabled =
+                !historico;
+
+            txtObservacoes.ReadOnly =
+                historico;
+
+            btnCadastrar.Enabled =
+                !historico;
+
+            if (historico)
+            {
+                btnCadastrar.Text =
+                    "Somente leitura";
+            }
+        }
+
+        private static void SelecionarComboPorValor(
+            ComboBox combo,
+            int valor)
+        {
+            for (int i = 0;
+                 i < combo.Items.Count;
+                 i++)
+            {
+                if (combo.Items[i]
+                    is ComboItem item &&
+                    item.Valor == valor)
+                {
+                    combo.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        // =====================================================
+        // SALVAR
+        // =====================================================
+
+        private async Task SalvarPagamentoAsync()
+        {
+            if (pagamentoId.HasValue)
+            {
+                await AtualizarPagamentoAsync();
+                return;
+            }
+
+            await CadastrarPagamentoAsync();
+        }
+
+        private async Task AtualizarPagamentoAsync()
+        {
+            if (pagamentoEdicao == null)
+                return;
+
+            if (cmbFormaPagamento.SelectedItem
+                is not ComboItem formaPagamento ||
+                cmbStatus.SelectedItem
+                is not ComboItem status)
+            {
+                MessageBox.Show(
+                    "Selecione a forma e o status do pagamento.",
+                    "GoCar",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
+                return;
+            }
+
+            if (pagamentoEdicao.Status == 3 ||
+                pagamentoEdicao.Status == 4)
+            {
+                MessageBox.Show(
+                    "Pagamentos cancelados ou estornados são mantidos apenas para histórico.",
+                    "GoCar",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                return;
+            }
+
+            bool estornando =
+                pagamentoEdicao.Status == 2 &&
+                status.Valor == 4;
+
+            string mensagem =
+                estornando
+                    ? "Deseja ESTORNAR este pagamento?\n\n" +
+                      "Se for uma entrada de reserva, a reserva será cancelada " +
+                      "e o veículo será liberado quando permitido."
+                    : "Deseja salvar as alterações deste pagamento?";
+
+            if (MessageBox.Show(
+                    mensagem,
+                    estornando
+                        ? "Confirmar Estorno"
+                        : "Confirmar Alteração",
+                    MessageBoxButtons.YesNo,
+                    estornando
+                        ? MessageBoxIcon.Warning
+                        : MessageBoxIcon.Question)
+                != DialogResult.Yes)
+            {
+                return;
+            }
+
+            var request =
+                new
+                {
+                    locacaoId =
+                        pagamentoEdicao.LocacaoId,
+
+                    reservaId =
+                        pagamentoEdicao.ReservaId,
+
+                    tipo =
+                        pagamentoEdicao.Tipo,
+
+                    formaPagamento =
+                        formaPagamento.Valor,
+
+                    status =
+                        status.Valor,
+
+                    valor =
+                        pagamentoEdicao.Valor,
+
+                    dataPagamento =
+                        pagamentoEdicao.DataPagamento,
+
+                    observacoes =
+                        string.IsNullOrWhiteSpace(
+                            txtObservacoes.Text)
+                            ? pagamentoEdicao.Observacoes
+                            : txtObservacoes.Text.Trim()
+                };
+
+            await EnviarAtualizacaoAsync(
+                request,
+                estornando
+                    ? "Pagamento estornado com sucesso!"
+                    : "Pagamento atualizado com sucesso!");
+        }
+
+        private async Task EnviarAtualizacaoAsync(
+            object request,
+            string mensagemSucesso)
+        {
+            if (!pagamentoId.HasValue)
+                return;
+
+            try
+            {
+                btnCadastrar.Enabled =
+                    false;
+
+                btnCancelar.Enabled =
+                    false;
+
+                cmbFormaPagamento.Enabled =
+                    false;
+
+                cmbStatus.Enabled =
+                    false;
+
+                btnCadastrar.Text =
+                    "Salvando...";
+
+                Cursor =
+                    Cursors.WaitCursor;
+
+                ConfigurarToken();
+
+                HttpResponseMessage response =
+                    await ApiClient.PutAsync(
+                        $"api/Pagamentos/{pagamentoId.Value}",
+                        request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    PagamentoCadastrado =
+                        true;
+
+                    MessageBox.Show(
+                        mensagemSucesso,
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                    DialogResult =
+                        DialogResult.OK;
+
+                    Close();
+
+                    return;
+                }
+
+                string conteudo =
+                    await response
+                        .Content
+                        .ReadAsStringAsync();
+
+                MessageBox.Show(
+                    ObterMensagemErro(
+                        conteudo),
+
+                    "Não foi possível atualizar o pagamento",
+
+                    MessageBoxButtons.OK,
+
+                    MessageBoxIcon.Warning);
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    "Não foi possível conectar à API.\n\n" +
+                    ex.Message,
+
+                    "Erro de conexão",
+
+                    MessageBoxButtons.OK,
+
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ocorreu um erro ao atualizar o pagamento.\n\n" +
+                    ex.Message,
+
+                    "GoCar",
+
+                    MessageBoxButtons.OK,
+
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (!IsDisposed)
+                {
+                    btnCancelar.Enabled =
+                        true;
+
+                    Cursor =
+                        Cursors.Default;
+
+                    if (pagamentoEdicao != null)
+                    {
+                        ConfigurarStatusEdicao(
+                            pagamentoEdicao.Status);
+
+                        cmbTipoPagamento.Enabled =
+                            false;
+
+                        cmbVinculo.Enabled =
+                            false;
+
+                        btnCadastrar.Text =
+                            pagamentoEdicao.Status == 3 ||
+                            pagamentoEdicao.Status == 4
+                                ? "Somente leitura"
+                                : "Salvar Alterações";
+                    }
+                }
+            }
         }
 
         // =====================================================
@@ -1398,13 +1905,15 @@ namespace GoCar.Desktop.Forms
                         true;
 
                     cmbTipoPagamento.Enabled =
-                        true;
+                        !pagamentoId.HasValue;
 
                     cmbVinculo.Enabled =
-                        true;
+                        !pagamentoId.HasValue;
 
                     btnCadastrar.Text =
-                        "Registrar Pagamento";
+                        pagamentoId.HasValue
+                            ? "Salvar Alterações"
+                            : "Registrar Pagamento";
 
                     Cursor =
                         Cursors.Default;

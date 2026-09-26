@@ -1,4 +1,4 @@
-﻿using GoCar.Application.DTOs.Reserva;
+using GoCar.Application.DTOs.Reserva;
 
 namespace GoCar.Application.Interfaces
 {
@@ -19,6 +19,8 @@ namespace GoCar.Application.Interfaces
             CriarReservaDto dto);
 
         Task<bool> ExcluirAsync(int id);
+
+        Task<bool> ExcluirPermanentementeAsync(int id);
 
         Task<bool> ConfirmarAsync(int id);
 

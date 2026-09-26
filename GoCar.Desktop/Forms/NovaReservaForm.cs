@@ -1,4 +1,4 @@
-﻿using GoCar.Desktop.Services;
+using GoCar.Desktop.Services;
 using GoCar.Desktop.Session;
 using System;
 using System.Collections.Generic;
@@ -43,6 +43,9 @@ namespace GoCar.Desktop.Forms
 
         private bool disponibilidadeVerificada;
         private int quantidadeDisponivel;
+
+        private readonly int? _reservaId;
+        private bool ModoEdicao => _reservaId.HasValue;
 
         public bool ReservaCadastrada { get; private set; }
 
@@ -117,18 +120,44 @@ namespace GoCar.Desktop.Forms
             public int QuantidadeDisponivel { get; set; }
         }
 
+        private class ReservaEdicaoResponse
+        {
+            public int Id { get; set; }
+            public int ClienteId { get; set; }
+            public int VeiculoId { get; set; }
+            public int FilialRetiradaId { get; set; }
+            public int FilialDevolucaoId { get; set; }
+            public DateTime DataRetirada { get; set; }
+            public DateTime DataDevolucaoPrevista { get; set; }
+            public int Status { get; set; }
+            public decimal ValorTotalPrevisto { get; set; }
+            public string? Observacoes { get; set; }
+        }
+
         // =====================================================
         // CONSTRUTOR
         // =====================================================
 
         public NovaReservaForm()
+            : this(null)
         {
+        }
+
+        public NovaReservaForm(int? reservaId)
+        {
+            _reservaId = reservaId;
+
             ConfigurarFormulario();
             CriarInterface();
 
             Shown += async (s, e) =>
             {
                 await CarregarDadosAsync();
+
+                if (ModoEdicao)
+                {
+                    await CarregarReservaParaEdicaoAsync();
+                }
             };
         }
 
@@ -138,7 +167,7 @@ namespace GoCar.Desktop.Forms
 
         private void ConfigurarFormulario()
         {
-            Text = "Nova Reserva - GoCar";
+            Text = ModoEdicao ? "Editar Reserva - GoCar" : "Nova Reserva - GoCar";
 
             StartPosition =
                 FormStartPosition.CenterParent;
@@ -174,7 +203,7 @@ namespace GoCar.Desktop.Forms
             Label lblTitulo =
                 new Label
                 {
-                    Text = "Nova Reserva",
+                    Text = ModoEdicao ? "Editar Reserva" : "Nova Reserva",
                     Font = new Font(
                         "Segoe UI",
                         22,
@@ -188,7 +217,9 @@ namespace GoCar.Desktop.Forms
                 new Label
                 {
                     Text =
-                        "Selecione o cliente, veículo, filiais e período da reserva.",
+                        ModoEdicao
+                            ? "Altere os dados permitidos da reserva."
+                            : "Selecione o cliente, veículo, filiais e período da reserva.",
                     ForeColor =
                         Color.FromArgb(170, 170, 180),
                     AutoSize = true,
@@ -513,7 +544,9 @@ namespace GoCar.Desktop.Forms
                 new Button
                 {
                     Text =
-                        "Criar Reserva",
+                        ModoEdicao
+                            ? "Salvar Alterações"
+                            : "Criar Reserva",
 
                     Location =
                         new Point(710, 665),
@@ -699,6 +732,122 @@ namespace GoCar.Desktop.Forms
             {
                 Cursor =
                     Cursors.Default;
+            }
+        }
+
+        // =====================================================
+        // CARREGAR RESERVA PARA EDIÇÃO
+        // =====================================================
+
+        private async Task CarregarReservaParaEdicaoAsync()
+        {
+            if (!ModoEdicao)
+                return;
+
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+
+                ConfigurarToken();
+
+                ReservaEdicaoResponse? reserva =
+                    await ApiClient
+                        .GetAsync<ReservaEdicaoResponse>(
+                            $"api/Reservas/{_reservaId!.Value}");
+
+                if (reserva == null)
+                {
+                    MessageBox.Show(
+                        "Reserva não encontrada.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    Close();
+                    return;
+                }
+
+                if (reserva.Status == 3 ||
+                    reserva.Status == 4 ||
+                    reserva.Status == 5)
+                {
+                    MessageBox.Show(
+                        "Esta reserva não pode mais ser alterada.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    Close();
+                    return;
+                }
+
+                SelecionarComboPorId(
+                    cmbCliente,
+                    clientes,
+                    reserva.ClienteId,
+                    c => c.Id);
+
+                SelecionarComboPorId(
+                    cmbVeiculo,
+                    veiculos,
+                    reserva.VeiculoId,
+                    v => v.Id);
+
+                SelecionarComboPorId(
+                    cmbFilialRetirada,
+                    filiais,
+                    reserva.FilialRetiradaId,
+                    f => f.Id);
+
+                SelecionarComboPorId(
+                    cmbFilialDevolucao,
+                    filiais,
+                    reserva.FilialDevolucaoId,
+                    f => f.Id);
+
+                dtpRetirada.Value =
+                    reserva.DataRetirada;
+
+                dtpDevolucao.Value =
+                    reserva.DataDevolucaoPrevista;
+
+                txtObservacoes.Text =
+                    reserva.Observacoes ?? string.Empty;
+
+                AtualizarValor();
+                InvalidarDisponibilidade();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Não foi possível carregar a reserva para edição.\n\n" +
+                    ex.Message,
+                    "GoCar",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                Close();
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
+
+        private static void SelecionarComboPorId<T>(
+            ComboBox combo,
+            List<T> itens,
+            int id,
+            Func<T, int> obterId)
+        {
+            int indice =
+                itens.FindIndex(
+                    item => obterId(item) == id);
+
+            if (indice >= 0)
+            {
+                combo.SelectedIndex =
+                    indice;
             }
         }
 
@@ -921,10 +1070,22 @@ namespace GoCar.Desktop.Forms
 
                 ConfigurarToken();
 
-                HttpResponseMessage response =
-                    await ApiClient.PostAsync(
-                        "api/Reservas",
-                        request);
+                HttpResponseMessage response;
+
+                if (ModoEdicao)
+                {
+                    response =
+                        await ApiClient.PutAsync(
+                            $"api/Reservas/{_reservaId!.Value}",
+                            request);
+                }
+                else
+                {
+                    response =
+                        await ApiClient.PostAsync(
+                            "api/Reservas",
+                            request);
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -932,7 +1093,9 @@ namespace GoCar.Desktop.Forms
                         true;
 
                     MessageBox.Show(
-                        "Reserva criada com sucesso!",
+                        ModoEdicao
+                            ? "Reserva atualizada com sucesso!"
+                            : "Reserva criada com sucesso!",
 
                         "GoCar",
 
@@ -955,7 +1118,9 @@ namespace GoCar.Desktop.Forms
                 MessageBox.Show(
                     ObterMensagemErro(conteudo),
 
-                    "Não foi possível criar a reserva",
+                    ModoEdicao
+                        ? "Não foi possível atualizar a reserva"
+                        : "Não foi possível criar a reserva",
 
                     MessageBoxButtons.OK,
 
@@ -964,7 +1129,9 @@ namespace GoCar.Desktop.Forms
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Ocorreu um erro ao criar a reserva.\n\n" +
+                    (ModoEdicao
+                        ? "Ocorreu um erro ao atualizar a reserva.\n\n"
+                        : "Ocorreu um erro ao criar a reserva.\n\n") +
                     ex.Message,
 
                     "GoCar",
@@ -987,7 +1154,9 @@ namespace GoCar.Desktop.Forms
                         true;
 
                     btnCadastrar.Text =
-                        "Criar Reserva";
+                        ModoEdicao
+                            ? "Salvar Alterações"
+                            : "Criar Reserva";
                 }
             }
         }

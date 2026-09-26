@@ -1,4 +1,4 @@
-﻿using GoCar.Desktop.Services;
+using GoCar.Desktop.Services;
 using GoCar.Desktop.Session;
 using System;
 using System.Collections.Generic;
@@ -28,6 +28,12 @@ namespace GoCar.Desktop.Forms
 
         private List<ReservaResponse> reservas =
             new List<ReservaResponse>();
+
+        private readonly int? _locacaoId;
+        private LocacaoResponse? _locacaoAtual;
+
+        private bool ModoEdicao =>
+            _locacaoId.HasValue;
 
         public bool LocacaoCadastrada { get; private set; }
 
@@ -90,17 +96,52 @@ namespace GoCar.Desktop.Forms
         }
 
         // =====================================================
+        // LOCAÇÃO
+        // =====================================================
+
+        private class LocacaoResponse
+        {
+            public int Id { get; set; }
+            public int ReservaId { get; set; }
+            public DateTime DataRetirada { get; set; }
+            public DateTime? DataDevolucaoReal { get; set; }
+            public int KmSaida { get; set; }
+            public int? KmEntrada { get; set; }
+            public decimal CombustivelSaidaPercentual { get; set; }
+            public decimal? CombustivelEntradaPercentual { get; set; }
+            public decimal ValorTotal { get; set; }
+            public int Status { get; set; }
+            public string? Observacoes { get; set; }
+            public bool IsAtiva { get; set; }
+            public DateTime DataCriacao { get; set; }
+        }
+
+        // =====================================================
         // CONSTRUTOR
         // =====================================================
 
         public NovaLocacaoForm()
+            : this(null)
         {
+        }
+
+        public NovaLocacaoForm(int? locacaoId)
+        {
+            _locacaoId = locacaoId;
+
             ConfigurarFormulario();
             CriarInterface();
 
             Shown += async (s, e) =>
             {
-                await CarregarReservasAsync();
+                if (ModoEdicao)
+                {
+                    await CarregarLocacaoParaEdicaoAsync();
+                }
+                else
+                {
+                    await CarregarReservasAsync();
+                }
             };
         }
 
@@ -110,7 +151,7 @@ namespace GoCar.Desktop.Forms
 
         private void ConfigurarFormulario()
         {
-            Text = "Nova Locação - GoCar";
+            Text = ModoEdicao ? "Editar Locação - GoCar" : "Nova Locação - GoCar";
 
             StartPosition =
                 FormStartPosition.CenterParent;
@@ -143,7 +184,7 @@ namespace GoCar.Desktop.Forms
             Label titulo =
                 new Label
                 {
-                    Text = "Iniciar Locação",
+                    Text = ModoEdicao ? "Editar Locação" : "Iniciar Locação",
 
                     Font =
                         new Font(
@@ -163,7 +204,9 @@ namespace GoCar.Desktop.Forms
                 new Label
                 {
                     Text =
-                        "Registre a retirada do veículo de uma reserva confirmada.",
+                        ModoEdicao
+                            ? "Atualize os dados da retirada da locação."
+                            : "Registre a retirada do veículo de uma reserva confirmada.",
 
                     ForeColor =
                         Color.FromArgb(
@@ -470,7 +513,10 @@ namespace GoCar.Desktop.Forms
             btnIniciarLocacao =
                 new Button
                 {
-                    Text = "Iniciar Locação",
+                    Text =
+                        ModoEdicao
+                            ? "Salvar Alterações"
+                            : "Iniciar Locação",
 
                     Location =
                         new Point(665, 645),
@@ -516,7 +562,14 @@ namespace GoCar.Desktop.Forms
             btnIniciarLocacao.Click +=
                 async (s, e) =>
                 {
-                    await IniciarLocacaoAsync();
+                    if (ModoEdicao)
+                    {
+                        await AtualizarLocacaoAsync();
+                    }
+                    else
+                    {
+                        await IniciarLocacaoAsync();
+                    }
                 };
 
             Controls.Add(btnCancelar);
@@ -527,6 +580,257 @@ namespace GoCar.Desktop.Forms
 
             CancelButton =
                 btnCancelar;
+        }
+
+        // =====================================================
+        // CARREGAR LOCAÇÃO PARA EDIÇÃO
+        // =====================================================
+
+        private async Task CarregarLocacaoParaEdicaoAsync()
+        {
+            if (!ModoEdicao)
+                return;
+
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+
+                ConfigurarToken();
+
+                _locacaoAtual =
+                    await ApiClient
+                        .GetAsync<LocacaoResponse>(
+                            $"api/Locacoes/{_locacaoId!.Value}");
+
+                if (_locacaoAtual == null)
+                {
+                    MessageBox.Show(
+                        "Locação não encontrada.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    Close();
+                    return;
+                }
+
+                if (_locacaoAtual.Status != 1 ||
+                    !_locacaoAtual.IsAtiva)
+                {
+                    MessageBox.Show(
+                        "Somente locações ativas podem ser alteradas.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    Close();
+                    return;
+                }
+
+                ReservaResponse? reserva =
+                    await ApiClient
+                        .GetAsync<ReservaResponse>(
+                            $"api/Reservas/{_locacaoAtual.ReservaId}");
+
+                if (reserva == null)
+                {
+                    MessageBox.Show(
+                        "A reserva vinculada à locação não foi encontrada.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    Close();
+                    return;
+                }
+
+                reservas =
+                    new List<ReservaResponse>
+                    {
+                        reserva
+                    };
+
+                cmbReserva.DataSource = null;
+                cmbReserva.DataSource = reservas;
+                cmbReserva.SelectedIndex = 0;
+                cmbReserva.Enabled = false;
+
+                AtualizarDadosReserva();
+
+                numKmSaida.Value =
+                    Math.Min(
+                        numKmSaida.Maximum,
+                        Math.Max(
+                            numKmSaida.Minimum,
+                            _locacaoAtual.KmSaida));
+
+                numCombustivel.Value =
+                    Math.Min(
+                        numCombustivel.Maximum,
+                        Math.Max(
+                            numCombustivel.Minimum,
+                            _locacaoAtual.CombustivelSaidaPercentual));
+
+                txtObservacoes.Text =
+                    _locacaoAtual.Observacoes ??
+                    string.Empty;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Não foi possível carregar a locação para edição.\n\n" +
+                    ex.Message,
+                    "GoCar",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                Close();
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
+
+        // =====================================================
+        // ATUALIZAR LOCAÇÃO
+        // =====================================================
+
+        private async Task AtualizarLocacaoAsync()
+        {
+            if (!ModoEdicao ||
+                _locacaoAtual == null)
+            {
+                return;
+            }
+
+            int kmSaida =
+                Convert.ToInt32(
+                    numKmSaida.Value);
+
+            decimal combustivel =
+                numCombustivel.Value;
+
+            DialogResult confirmar =
+                MessageBox.Show(
+                    "Deseja salvar as alterações desta locação?\n\n" +
+                    $"Locação: #{_locacaoAtual.Id}\n" +
+                    $"KM de saída: {kmSaida:N0}\n" +
+                    $"Combustível: {combustivel:N0}%",
+                    "Confirmar alteração",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+            if (confirmar != DialogResult.Yes)
+                return;
+
+            try
+            {
+                btnIniciarLocacao.Enabled = false;
+                btnCancelar.Enabled = false;
+                btnIniciarLocacao.Text = "Salvando...";
+                Cursor = Cursors.WaitCursor;
+
+                ConfigurarToken();
+
+                var request =
+                    new
+                    {
+                        dataRetirada =
+                            _locacaoAtual.DataRetirada,
+
+                        dataDevolucaoReal =
+                            _locacaoAtual.DataDevolucaoReal,
+
+                        kmSaida =
+                            kmSaida,
+
+                        kmEntrada =
+                            _locacaoAtual.KmEntrada,
+
+                        combustivelSaidaPercentual =
+                            combustivel,
+
+                        combustivelEntradaPercentual =
+                            _locacaoAtual.CombustivelEntradaPercentual,
+
+                        valorTotal =
+                            _locacaoAtual.ValorTotal,
+
+                        status =
+                            _locacaoAtual.Status,
+
+                        observacoes =
+                            string.IsNullOrWhiteSpace(
+                                txtObservacoes.Text)
+                                ? null
+                                : txtObservacoes.Text.Trim(),
+
+                        isAtiva =
+                            _locacaoAtual.IsAtiva
+                    };
+
+                HttpResponseMessage response =
+                    await ApiClient.PutAsync(
+                        $"api/Locacoes/{_locacaoAtual.Id}",
+                        request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    LocacaoCadastrada = true;
+
+                    MessageBox.Show(
+                        "Locação atualizada com sucesso!",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                    DialogResult = DialogResult.OK;
+                    Close();
+                    return;
+                }
+
+                string conteudo =
+                    await response.Content
+                        .ReadAsStringAsync();
+
+                MessageBox.Show(
+                    ObterMensagemErro(conteudo),
+                    "Não foi possível atualizar a locação",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    "Não foi possível conectar à API.\n\n" +
+                    ex.Message,
+                    "Erro de conexão",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ocorreu um erro ao atualizar a locação.\n\n" +
+                    ex.Message,
+                    "GoCar",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (!IsDisposed)
+                {
+                    btnIniciarLocacao.Enabled = true;
+                    btnCancelar.Enabled = true;
+                    btnIniciarLocacao.Text =
+                        ModoEdicao
+                            ? "Salvar Alterações"
+                            : "Iniciar Locação";
+                    Cursor = Cursors.Default;
+                }
+            }
         }
 
         // =====================================================
@@ -669,7 +973,10 @@ namespace GoCar.Desktop.Forms
             // Como sugestão inicial, não alteramos automaticamente
             // o KM porque o funcionário deve conferir o painel
             // físico do veículo.
-            numKmSaida.Value = 0;
+            if (!ModoEdicao)
+            {
+                numKmSaida.Value = 0;
+            }
         }
 
         // =====================================================

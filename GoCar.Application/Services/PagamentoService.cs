@@ -1,4 +1,4 @@
-﻿using GoCar.Application.DTOs.Pagamento;
+using GoCar.Application.DTOs.Pagamento;
 using GoCar.Application.Interfaces;
 using GoCar.Domain.Entities;
 using GoCar.Domain.Enums;
@@ -466,6 +466,7 @@ namespace GoCar.Application.Services
                 return false;
 
             Reserva? reservaEntrada = null;
+            var statusAnterior = pagamento.Status;
 
             if (pagamento.ReservaId.HasValue)
             {
@@ -491,6 +492,40 @@ namespace GoCar.Application.Services
 
                 pagamento.LocacaoId =
                     null;
+
+                // Uma entrada já paga só pode ser mantida como Paga
+                // ou ser Estornada. O estorno só é permitido antes
+                // de existir uma locação vinculada à reserva.
+                if (statusAnterior == StatusPagamento.Pago)
+                {
+                    if (dto.Status != StatusPagamento.Pago &&
+                        dto.Status != StatusPagamento.Estornado)
+                    {
+                        throw new InvalidOperationException(
+                            "Uma entrada já paga só pode permanecer Paga ou ser Estornada.");
+                    }
+
+                    if (dto.Status == StatusPagamento.Estornado)
+                    {
+                        var locacaoVinculada =
+                            await _locacaoRepository
+                                .ObterPorReservaIdAsync(reservaId);
+
+                        if (locacaoVinculada != null)
+                        {
+                            throw new InvalidOperationException(
+                                "Não é possível estornar a entrada porque esta reserva " +
+                                "já possui uma locação vinculada.");
+                        }
+
+                        if (reserva.Status != StatusReserva.Confirmada)
+                        {
+                            throw new InvalidOperationException(
+                                "A entrada paga só pode ser estornada enquanto a reserva " +
+                                "estiver confirmada.");
+                        }
+                    }
+                }
 
                 reservaEntrada =
                     reserva;
@@ -674,6 +709,18 @@ namespace GoCar.Application.Services
                 return false;
 
             // =================================================
+            // ENTRADA PAGA SENDO ESTORNADA
+            // Cancela a reserva e libera/sincroniza o veículo.
+            // =================================================
+
+            if (reservaEntrada != null &&
+                statusAnterior == StatusPagamento.Pago &&
+                pagamento.Status == StatusPagamento.Estornado)
+            {
+                await CancelarReservaAposEstornoAsync(reservaEntrada);
+            }
+
+            // =================================================
             // ENTRADA ALTERADA PARA PAGA
             // =================================================
 
@@ -719,6 +766,84 @@ namespace GoCar.Application.Services
         {
             return await _pagamentoRepository
                 .ExcluirAsync(id);
+        }
+
+        // =====================================================
+        // CANCELAR RESERVA APÓS ESTORNO DA ENTRADA
+        // =====================================================
+
+        private async Task CancelarReservaAposEstornoAsync(
+            Reserva reserva)
+        {
+            if (reserva.Status != StatusReserva.Confirmada)
+            {
+                throw new InvalidOperationException(
+                    "Somente uma reserva confirmada pode ser cancelada pelo estorno da entrada.");
+            }
+
+            var veiculoId = reserva.VeiculoId;
+
+            reserva.Status = StatusReserva.Cancelada;
+            reserva.IsAtiva = false;
+            reserva.DataCancelamento = DateTime.Now;
+
+            var reservaAtualizada =
+                await _reservaRepository.AtualizarAsync(reserva);
+
+            if (!reservaAtualizada)
+            {
+                throw new Exception(
+                    "O pagamento foi estornado, mas não foi possível cancelar a reserva.");
+            }
+
+            await SincronizarStatusVeiculoAposEstornoAsync(
+                veiculoId,
+                reserva.Id);
+        }
+
+        // =====================================================
+        // SINCRONIZAR VEÍCULO APÓS ESTORNO
+        // =====================================================
+
+        private async Task SincronizarStatusVeiculoAposEstornoAsync(
+            int veiculoId,
+            int reservaIgnorarId)
+        {
+            var veiculo =
+                await _veiculoRepository.ObterPorIdAsync(veiculoId);
+
+            if (veiculo == null || !veiculo.IsAtivo)
+                return;
+
+            // Segurança: uma unidade em locação nunca deve ser liberada
+            // por um estorno de entrada.
+            if (veiculo.Status == StatusVeiculo.Alugado)
+                return;
+
+            var possuiOutraReservaConfirmada =
+                await _reservaRepository
+                    .ExisteOutraReservaConfirmadaAsync(
+                        veiculoId,
+                        reservaIgnorarId);
+
+            var novoStatus =
+                possuiOutraReservaConfirmada
+                    ? StatusVeiculo.Reservado
+                    : StatusVeiculo.Disponivel;
+
+            if (veiculo.Status == novoStatus)
+                return;
+
+            veiculo.Status = novoStatus;
+
+            var atualizado =
+                await _veiculoRepository.AtualizarAsync(veiculo);
+
+            if (!atualizado)
+            {
+                throw new Exception(
+                    "A reserva foi cancelada, mas não foi possível sincronizar o status do veículo.");
+            }
         }
 
         // =====================================================

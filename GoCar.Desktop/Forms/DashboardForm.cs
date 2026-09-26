@@ -3044,6 +3044,21 @@ namespace GoCar.Desktop.Forms
             colunaAcao.FillWeight = 85;
             dgvClientes.Columns.Add(colunaAcao);
 
+            var colunaExcluirPermanentemente = new DataGridViewButtonColumn
+            {
+                Name = "ExcluirPermanentemente",
+                HeaderText = "Excluir",
+                Text = "Excluir",
+                UseColumnTextForButtonValue = true,
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaExcluirPermanentemente.DefaultCellStyle.BackColor =
+                Color.FromArgb(125, 30, 45);
+            colunaExcluirPermanentemente.DefaultCellStyle.ForeColor =
+                Color.White;
+            colunaExcluirPermanentemente.FillWeight = 75;
+            dgvClientes.Columns.Add(colunaExcluirPermanentemente);
+
             pnlConteudo.Controls.Add(lblTitulo);
             pnlConteudo.Controls.Add(lblDescricao);
             pnlConteudo.Controls.Add(txtBusca);
@@ -3145,6 +3160,62 @@ namespace GoCar.Desktop.Forms
                         {
                             await CarregarClientesAsync();
                         }
+                    }
+
+                    return;
+                }
+
+                if (coluna == "ExcluirPermanentemente")
+                {
+                    DialogResult confirmar = MessageBox.Show(
+                        $"Deseja excluir permanentemente o cliente {cliente.Nome}?\n\n" +
+                        "Esta ação não poderá ser desfeita.\n" +
+                        "Clientes com reservas ou histórico vinculado não poderão ser excluídos.",
+                        "GoCar - Exclusão permanente",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        HttpResponseMessage response =
+                            await ApiClient.DeleteAsync(
+                                $"api/Clientes/{cliente.Id}/permanente");
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content.ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível excluir permanentemente o cliente.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Cliente excluído permanentemente com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarClientesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao excluir permanentemente o cliente.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
                     }
 
                     return;
@@ -3293,7 +3364,8 @@ namespace GoCar.Desktop.Forms
                     cidade,
                     status,
                     "Editar",
-                    cliente.IsAtivo ? "Desativar" : "Reativar");
+                    cliente.IsAtivo ? "Desativar" : "Reativar",
+                    "Excluir");
 
                 tabela.Rows[indice].Tag = cliente;
             }
@@ -3714,29 +3786,35 @@ namespace GoCar.Desktop.Forms
                 "Status"
             );
 
-            pnlConteudo.Controls.Add(
-                lblTitulo
-            );
+            DataGridViewButtonColumn colunaEditar =
+                new DataGridViewButtonColumn
+                {
+                    Name = "Editar",
+                    HeaderText = "",
+                    Text = "Editar",
+                    UseColumnTextForButtonValue = true,
+                    FlatStyle = FlatStyle.Flat
+                };
 
-            pnlConteudo.Controls.Add(
-                lblDescricao
-            );
+            DataGridViewButtonColumn colunaExcluir =
+                new DataGridViewButtonColumn
+                {
+                    Name = "Excluir",
+                    HeaderText = "",
+                    Text = "Excluir",
+                    UseColumnTextForButtonValue = true,
+                    FlatStyle = FlatStyle.Flat
+                };
 
-            pnlConteudo.Controls.Add(
-                txtBusca
-            );
+            dgvReservas.Columns.Add(colunaEditar);
+            dgvReservas.Columns.Add(colunaExcluir);
 
-            pnlConteudo.Controls.Add(
-                cmbStatus
-            );
-
-            pnlConteudo.Controls.Add(
-                btnNovaReserva
-            );
-
-            pnlConteudo.Controls.Add(
-                dgvReservas
-            );
+            pnlConteudo.Controls.Add(lblTitulo);
+            pnlConteudo.Controls.Add(lblDescricao);
+            pnlConteudo.Controls.Add(txtBusca);
+            pnlConteudo.Controls.Add(cmbStatus);
+            pnlConteudo.Controls.Add(btnNovaReserva);
+            pnlConteudo.Controls.Add(dgvReservas);
 
             void AplicarFiltros()
             {
@@ -3748,11 +3826,7 @@ namespace GoCar.Desktop.Forms
                 IEnumerable<ReservaResponse> resultado =
                     reservasCarregadas;
 
-                if (
-                    !string.IsNullOrWhiteSpace(
-                        busca
-                    )
-                )
+                if (!string.IsNullOrWhiteSpace(busca))
                 {
                     resultado =
                         resultado.Where(
@@ -3775,9 +3849,7 @@ namespace GoCar.Desktop.Forms
                         );
                 }
 
-                if (
-                    cmbStatus.SelectedIndex > 0
-                )
+                if (cmbStatus.SelectedIndex > 0)
                 {
                     string statusSelecionado =
                         cmbStatus.SelectedItem?
@@ -3788,9 +3860,7 @@ namespace GoCar.Desktop.Forms
                         resultado.Where(
                             r =>
                                 string.Equals(
-                                    ObterStatusReserva(
-                                        r.Status
-                                    ),
+                                    ObterStatusReserva(r.Status),
                                     statusSelecionado,
                                     StringComparison.OrdinalIgnoreCase
                                 )
@@ -3839,12 +3909,118 @@ namespace GoCar.Desktop.Forms
                     DialogResult resultado =
                         form.ShowDialog(this);
 
-                    if (
-                        resultado == DialogResult.OK &&
-                        form.ReservaCadastrada
-                    )
+                    if (resultado == DialogResult.OK &&
+                        form.ReservaCadastrada)
                     {
                         await CarregarReservasAsync();
+                    }
+                };
+
+            dgvReservas.CellContentClick +=
+                async (s, e) =>
+                {
+                    if (e.RowIndex < 0 ||
+                        e.ColumnIndex < 0)
+                    {
+                        return;
+                    }
+
+                    if (dgvReservas.Rows[e.RowIndex].Tag
+                        is not ReservaResponse reserva)
+                    {
+                        return;
+                    }
+
+                    string coluna =
+                        dgvReservas.Columns[e.ColumnIndex].Name;
+
+                    if (coluna == "Editar")
+                    {
+                        if (reserva.Status == 3 ||
+                            reserva.Status == 4 ||
+                            reserva.Status == 5)
+                        {
+                            MessageBox.Show(
+                                "Reservas canceladas, expiradas ou concluídas " +
+                                "não podem mais ser alteradas.",
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Warning);
+
+                            return;
+                        }
+
+                        using NovaReservaForm form =
+                            new NovaReservaForm(reserva.Id);
+
+                        DialogResult resultado =
+                            form.ShowDialog(this);
+
+                        if (resultado == DialogResult.OK &&
+                            form.ReservaCadastrada)
+                        {
+                            await CarregarReservasAsync();
+                        }
+
+                        return;
+                    }
+
+                    if (coluna != "Excluir")
+                        return;
+
+                    DialogResult confirmar =
+                        MessageBox.Show(
+                            $"Deseja excluir permanentemente a reserva #{reserva.Id}?\n\n" +
+                            "Reservas que possuem pagamento ou locação vinculada " +
+                            "não podem ser excluídas.\n\n" +
+                            "Esta ação não poderá ser desfeita.",
+                            "GoCar - Exclusão permanente",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning);
+
+                    if (confirmar != DialogResult.Yes)
+                        return;
+
+                    try
+                    {
+                        ConfigurarToken();
+
+                        HttpResponseMessage response =
+                            await ApiClient.DeleteAsync(
+                                $"api/Reservas/{reserva.Id}/permanente");
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            string erro =
+                                await response.Content
+                                    .ReadAsStringAsync();
+
+                            MessageBox.Show(
+                                "Não foi possível excluir a reserva.\n\n" +
+                                erro,
+                                "GoCar",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+
+                            return;
+                        }
+
+                        MessageBox.Show(
+                            "Reserva excluída permanentemente com sucesso!",
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await CarregarReservasAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            "Erro ao excluir reserva.\n\n" +
+                            ex.Message,
+                            "GoCar",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
                     }
                 };
 
@@ -3868,26 +4044,45 @@ namespace GoCar.Desktop.Forms
             IEnumerable<ReservaResponse> reservas)
         {
             tabela.Rows.Clear();
-            CultureInfo cultura = new CultureInfo("pt-BR");
+            CultureInfo cultura =
+                new CultureInfo("pt-BR");
 
             foreach (ReservaResponse reserva in reservas)
             {
-                string cliente = string.IsNullOrWhiteSpace(reserva.ClienteNome)
-                    ? $"Cliente #{reserva.ClienteId}"
-                    : reserva.ClienteNome;
+                string cliente =
+                    string.IsNullOrWhiteSpace(reserva.ClienteNome)
+                        ? $"Cliente #{reserva.ClienteId}"
+                        : reserva.ClienteNome;
 
-                string veiculo = string.IsNullOrWhiteSpace(reserva.VeiculoNome)
-                    ? $"Veículo #{reserva.VeiculoId}"
-                    : reserva.VeiculoNome;
+                string veiculo =
+                    string.IsNullOrWhiteSpace(reserva.VeiculoNome)
+                        ? $"Veículo #{reserva.VeiculoId}"
+                        : reserva.VeiculoNome;
 
-                tabela.Rows.Add(
-                    cliente,
-                    veiculo,
-                    reserva.VeiculoPlaca ?? string.Empty,
-                    reserva.DataRetirada.ToString("dd/MM/yyyy HH:mm"),
-                    reserva.DataDevolucaoPrevista.ToString("dd/MM/yyyy HH:mm"),
-                    reserva.ValorTotalPrevisto.ToString("C2", cultura),
-                    ObterStatusReserva(reserva.Status));
+                int indice =
+                    tabela.Rows.Add(
+                        cliente,
+                        veiculo,
+                        reserva.VeiculoPlaca ?? string.Empty,
+                        reserva.DataRetirada.ToString("dd/MM/yyyy HH:mm"),
+                        reserva.DataDevolucaoPrevista.ToString("dd/MM/yyyy HH:mm"),
+                        reserva.ValorTotalPrevisto.ToString("C2", cultura),
+                        ObterStatusReserva(reserva.Status),
+                        "Editar",
+                        "Excluir"
+                    );
+
+                tabela.Rows[indice].Tag =
+                    reserva;
+
+                if (reserva.Status == 3 ||
+                    reserva.Status == 4 ||
+                    reserva.Status == 5)
+                {
+                    tabela.Rows[indice]
+                        .Cells["Editar"]
+                        .ReadOnly = true;
+                }
             }
         }
 
@@ -3961,13 +4156,39 @@ namespace GoCar.Desktop.Forms
             dgvLocacoes.Columns.Add("Valor", "Valor");
             dgvLocacoes.Columns.Add("Status", "Status");
 
-            dgvLocacoes.Columns["Id"].FillWeight = 40;
-            dgvLocacoes.Columns["Reserva"].FillWeight = 70;
-            dgvLocacoes.Columns["Retirada"].FillWeight = 120;
-            dgvLocacoes.Columns["KmSaida"].FillWeight = 80;
-            dgvLocacoes.Columns["Combustivel"].FillWeight = 80;
-            dgvLocacoes.Columns["Valor"].FillWeight = 90;
-            dgvLocacoes.Columns["Status"].FillWeight = 80;
+            var colunaEditar = new DataGridViewButtonColumn
+            {
+                Name = "Editar",
+                HeaderText = "Editar",
+                Text = "Editar",
+                UseColumnTextForButtonValue = true,
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaEditar.DefaultCellStyle.BackColor =
+                Color.FromArgb(83, 38, 135);
+            colunaEditar.DefaultCellStyle.ForeColor = Color.White;
+            colunaEditar.FillWeight = 65;
+            dgvLocacoes.Columns.Add(colunaEditar);
+
+            var colunaCancelar = new DataGridViewButtonColumn
+            {
+                Name = "CancelarLocacao",
+                HeaderText = "Ação",
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaCancelar.DefaultCellStyle.BackColor =
+                Color.FromArgb(105, 35, 55);
+            colunaCancelar.DefaultCellStyle.ForeColor = Color.White;
+            colunaCancelar.FillWeight = 75;
+            dgvLocacoes.Columns.Add(colunaCancelar);
+
+            dgvLocacoes.Columns["Id"].FillWeight = 35;
+            dgvLocacoes.Columns["Reserva"].FillWeight = 65;
+            dgvLocacoes.Columns["Retirada"].FillWeight = 105;
+            dgvLocacoes.Columns["KmSaida"].FillWeight = 70;
+            dgvLocacoes.Columns["Combustivel"].FillWeight = 70;
+            dgvLocacoes.Columns["Valor"].FillWeight = 80;
+            dgvLocacoes.Columns["Status"].FillWeight = 70;
 
             pnlConteudo.Controls.Add(lblTitulo);
             pnlConteudo.Controls.Add(lblDescricao);
@@ -4031,6 +4252,31 @@ namespace GoCar.Desktop.Forms
                 }
             }
 
+            async Task AbrirEdicaoAsync(LocacaoResponse locacao)
+            {
+                if (!locacao.IsAtiva || locacao.Status != 1)
+                {
+                    MessageBox.Show(
+                        "Somente locações ativas podem ser alteradas.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                using NovaLocacaoForm form =
+                    new NovaLocacaoForm(locacao.Id);
+
+                DialogResult resultado =
+                    form.ShowDialog(this);
+
+                if (resultado == DialogResult.OK &&
+                    form.LocacaoCadastrada)
+                {
+                    await CarregarLocacoesAsync();
+                }
+            }
+
             async Task AbrirFinalizacaoAsync()
             {
                 if (dgvLocacoes.CurrentRow?.Tag is not LocacaoResponse locacao)
@@ -4085,6 +4331,70 @@ namespace GoCar.Desktop.Forms
                 }
             }
 
+            async Task CancelarLocacaoAsync(LocacaoResponse locacao)
+            {
+                if (!locacao.IsAtiva || locacao.Status != 1)
+                {
+                    MessageBox.Show(
+                        "Somente uma locação ativa pode ser cancelada.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                DialogResult confirmar =
+                    MessageBox.Show(
+                        $"Deseja realmente cancelar a locação #{locacao.Id}?\n\n" +
+                        $"Reserva vinculada: #{locacao.ReservaId}\n\n" +
+                        "A locação será mantida no histórico como cancelada.",
+                        "Cancelar locação",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                if (confirmar != DialogResult.Yes)
+                    return;
+
+                try
+                {
+                    ConfigurarToken();
+
+                    HttpResponseMessage response =
+                        await ApiClient.DeleteAsync(
+                            $"api/Locacoes/{locacao.Id}");
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        string erro =
+                            await response.Content.ReadAsStringAsync();
+
+                        MessageBox.Show(
+                            ObterMensagemErroApi(erro),
+                            "Não foi possível cancelar a locação",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    MessageBox.Show(
+                        "Locação cancelada com sucesso!",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                    await CarregarLocacoesAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "Erro ao cancelar a locação.\n\n" +
+                        ex.Message,
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
+
             btnNovaLocacao.Click += async (s, e) =>
             {
                 using NovaLocacaoForm form = new NovaLocacaoForm();
@@ -4112,14 +4422,38 @@ namespace GoCar.Desktop.Forms
                 }
             };
 
+            dgvLocacoes.CellContentClick += async (s, e) =>
+            {
+                if (e.RowIndex < 0 || e.ColumnIndex < 0)
+                    return;
+
+                if (dgvLocacoes.Rows[e.RowIndex].Tag
+                    is not LocacaoResponse locacao)
+                    return;
+
+                string coluna =
+                    dgvLocacoes.Columns[e.ColumnIndex].Name;
+
+                if (coluna == "Editar")
+                {
+                    await AbrirEdicaoAsync(locacao);
+                    return;
+                }
+
+                if (coluna == "CancelarLocacao")
+                {
+                    await CancelarLocacaoAsync(locacao);
+                }
+            };
+
             dgvLocacoes.CellDoubleClick += async (s, e) =>
             {
                 if (e.RowIndex < 0)
                     return;
 
-                dgvLocacoes.Rows[e.RowIndex].Selected = true;
-                dgvLocacoes.CurrentCell =
-                    dgvLocacoes.Rows[e.RowIndex].Cells[0];
+                if (dgvLocacoes.Rows[e.RowIndex].Tag
+                    is not LocacaoResponse locacao)
+                    return;
 
                 await AbrirFinalizacaoAsync();
             };
@@ -4153,6 +4487,10 @@ namespace GoCar.Desktop.Forms
                 string km = locacao.KmSaida.ToString("N0", cultura);
                 string valor = locacao.ValorTotal.ToString("C2", cultura);
 
+                bool ativa =
+                    locacao.IsAtiva &&
+                    locacao.Status == 1;
+
                 int indice = tabela.Rows.Add(
                     locacao.Id,
                     $"Reserva #{locacao.ReservaId}",
@@ -4160,9 +4498,24 @@ namespace GoCar.Desktop.Forms
                     km,
                     combustivel,
                     valor,
-                    ObterStatusLocacao(locacao.Status, locacao.IsAtiva));
+                    ObterStatusLocacao(locacao.Status, locacao.IsAtiva),
+                    ativa ? "Editar" : "Bloqueado",
+                    ativa ? "Cancelar" : "-");
 
                 tabela.Rows[indice].Tag = locacao;
+
+                if (!ativa)
+                {
+                    tabela.Rows[indice]
+                        .Cells["Editar"]
+                        .Style.ForeColor =
+                        Color.FromArgb(145, 145, 155);
+
+                    tabela.Rows[indice]
+                        .Cells["CancelarLocacao"]
+                        .Style.ForeColor =
+                        Color.FromArgb(145, 145, 155);
+                }
             }
         }
 
@@ -4175,6 +4528,32 @@ namespace GoCar.Desktop.Forms
                 3 => "Cancelada",
                 _ => isAtiva ? "Ativa" : $"Status {status}"
             };
+        }
+
+        private static string ObterMensagemErroApi(string conteudo)
+        {
+            if (string.IsNullOrWhiteSpace(conteudo))
+                return "A operação não pôde ser concluída.";
+
+            try
+            {
+                using System.Text.Json.JsonDocument json =
+                    System.Text.Json.JsonDocument.Parse(conteudo);
+
+                if (json.RootElement.TryGetProperty(
+                    "mensagem",
+                    out System.Text.Json.JsonElement mensagem))
+                {
+                    return mensagem.GetString()
+                        ?? "A operação não pôde ser concluída.";
+                }
+            }
+            catch
+            {
+                // Resposta da API não estava em JSON.
+            }
+
+            return conteudo;
         }
 
         // =====================================================
@@ -4211,7 +4590,8 @@ namespace GoCar.Desktop.Forms
                 "Todos status",
                 "Pendente",
                 "Pago",
-                "Cancelado"
+                "Cancelado",
+                "Estornado"
             });
 
             cmbStatus.SelectedIndex = 0;
@@ -4239,6 +4619,30 @@ namespace GoCar.Desktop.Forms
             dgvPagamentos.Columns.Add("Status", "Status");
             dgvPagamentos.Columns.Add("Valor", "Valor");
             dgvPagamentos.Columns.Add("Data", "Data do Pagamento");
+
+            var colunaEditarPagamento = new DataGridViewButtonColumn
+            {
+                Name = "EditarPagamento",
+                HeaderText = "Editar",
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaEditarPagamento.DefaultCellStyle.BackColor =
+                Color.FromArgb(83, 38, 135);
+            colunaEditarPagamento.DefaultCellStyle.ForeColor = Color.White;
+            colunaEditarPagamento.FillWeight = 70;
+            dgvPagamentos.Columns.Add(colunaEditarPagamento);
+
+            var colunaAcaoPagamento = new DataGridViewButtonColumn
+            {
+                Name = "AcaoPagamento",
+                HeaderText = "Ação",
+                FlatStyle = FlatStyle.Flat
+            };
+            colunaAcaoPagamento.DefaultCellStyle.BackColor =
+                Color.FromArgb(105, 35, 55);
+            colunaAcaoPagamento.DefaultCellStyle.ForeColor = Color.White;
+            colunaAcaoPagamento.FillWeight = 80;
+            dgvPagamentos.Columns.Add(colunaAcaoPagamento);
 
             dgvPagamentos.Columns["Id"].FillWeight = 45;
             dgvPagamentos.Columns["Vinculo"].FillWeight = 85;
@@ -4369,6 +4773,60 @@ namespace GoCar.Desktop.Forms
                 }
             };
 
+            dgvPagamentos.CellContentClick += async (s, e) =>
+            {
+                if (e.RowIndex < 0 || e.ColumnIndex < 0)
+                    return;
+
+                if (dgvPagamentos.Rows[e.RowIndex].Tag
+                    is not PagamentoResponse pagamento)
+                    return;
+
+                string coluna =
+                    dgvPagamentos.Columns[e.ColumnIndex].Name;
+
+                if (coluna != "EditarPagamento" &&
+                    coluna != "AcaoPagamento")
+                    return;
+
+                if (pagamento.Status == 3 ||
+                    pagamento.Status == 4)
+                {
+                    MessageBox.Show(
+                        pagamento.Status == 3
+                            ? "Este pagamento está cancelado e é mantido somente para histórico."
+                            : "Este pagamento está estornado e é mantido somente para histórico.",
+                        "GoCar",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                    return;
+                }
+
+                int? statusInicial =
+                    coluna == "AcaoPagamento"
+                        ? pagamento.Status == 1
+                            ? 3
+                            : pagamento.Status == 2
+                                ? 4
+                                : null
+                        : null;
+
+                using NovoPagamentoForm form =
+                    new NovoPagamentoForm(
+                        pagamento.Id,
+                        statusInicial);
+
+                DialogResult resultado =
+                    form.ShowDialog(this);
+
+                if (resultado == DialogResult.OK &&
+                    form.PagamentoCadastrado)
+                {
+                    await CarregarPagamentosAsync();
+                }
+            };
+
             txtBusca.TextChanged += (s, e) =>
             {
                 AplicarFiltros();
@@ -4410,14 +4868,47 @@ namespace GoCar.Desktop.Forms
                     ? pagamento.DataPagamento.Value.ToString("dd/MM/yyyy HH:mm")
                     : "Pendente";
 
-                tabela.Rows.Add(
+                string textoEditar =
+                    pagamento.Status == 3 ||
+                    pagamento.Status == 4
+                        ? "Histórico"
+                        : "Editar";
+
+                string textoAcao =
+                    pagamento.Status switch
+                    {
+                        1 => "Cancelar",
+                        2 => "Estornar",
+                        3 => "-",
+                        4 => "-",
+                        _ => "-"
+                    };
+
+                int indice = tabela.Rows.Add(
                     pagamento.Id,
                     vinculo,
                     pagamento.Tipo,
                     ObterFormaPagamento(pagamento.FormaPagamento),
                     ObterStatusPagamento(pagamento.Status),
                     pagamento.Valor.ToString("C2", cultura),
-                    dataPagamento);
+                    dataPagamento,
+                    textoEditar,
+                    textoAcao);
+
+                tabela.Rows[indice].Tag =
+                    pagamento;
+
+                if (pagamento.Status == 3 ||
+                    pagamento.Status == 4)
+                {
+                    tabela.Rows[indice]
+                        .Cells["EditarPagamento"]
+                        .Style.ForeColor = Color.Gray;
+
+                    tabela.Rows[indice]
+                        .Cells["AcaoPagamento"]
+                        .Style.ForeColor = Color.Gray;
+                }
             }
         }
 
